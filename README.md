@@ -129,6 +129,6 @@ cd frontend && npm run lint && npm run build
 
 ## License
 
-Copyright (c) 2026 [Your name or institution]. All rights reserved.
+Copyright (c) 2026 [Priti Kurane]. All rights reserved.
 
 This is proprietary software. The source code is private and may not be copied, modified, distributed, or used without written permission from the owner.
