@@ -129,4 +129,6 @@ cd frontend && npm run lint && npm run build
 
 ## License
 
-Add your license here (for example MIT), or state that the code is private and all rights are reserved.
+Copyright (c) 2026 [Your name or institution]. All rights reserved.
+
+This is proprietary software. The source code is private and may not be copied, modified, distributed, or used without written permission from the owner.
