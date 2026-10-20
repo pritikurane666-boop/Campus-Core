@@ -1,0 +1,53 @@
+services:
+  - type: web
+    name: campuscore-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: oregon
+    plan: starter
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: PORT
+        value: "10000"
+      - key: ConnectionStrings__DefaultConnection
+        value: "Host=aws-0-ap-southeast-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.iodxtlpdpxhzqegxzeyd;Password=College_Erp@1101;SSL Mode=Require;Trust Server Certificate=true;"
+      - key: Jwt__Secret
+        value: "InstitutionErpProductionSuperSecretJwtKey2026!Min32Bytes"
+      - key: Jwt__Issuer
+        value: InstitutionErp
+      - key: Jwt__Audience
+        value: InstitutionErpApp
+      - key: Jwt__ExpiryMinutes
+        value: "60"
+      - key: Jwt__RefreshTokenExpiryDays
+        value: "7"
+      - key: Admin__Email
+        value: "admin@gmail.com"
+      - key: Admin__Password
+        value: "admin@123"
+      - key: Admin__FullName
+        value: "System Administrator"
+      - key: Email__Provider
+        value: Brevo
+      - key: Email__ApiKey
+        sync: false
+      - key: Email__FromAddress
+        sync: false
+      - key: Email__FromName
+        value: "CampusCore ERP"
+      - key: Email__DailyLimit
+        value: "300"
+      - key: Supabase__Url
+        value: "https://iodxtlpdpxhzqegxzeyd.supabase.co"
+      - key: Supabase__ServiceRoleKey
+        sync: false
+      - key: Supabase__StorageBucket
+        value: campuscore-documents
+      - key: App__FrontendBaseUrl
+        value: "https://institue-erp.vercel.app"
+      - key: Cors__AllowedOrigins
+        value: "https://institue-erp.vercel.app,https://campuscore.vercel.app,http://localhost:3000"

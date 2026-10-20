@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: institution_erp_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-institution_erp}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-institution_erp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: institution_erp_mailhog
+    restart: always
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: institution_erp_backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection:-Host=postgres;Port=5432;Database=institution_erp;Username=postgres;Password=root}
+      Jwt__Secret: ${Jwt__Secret:-DevelopmentSecretKeyForLocalTestingOnlyMinimum32CharactersLong!}
+      Jwt__Issuer: ${Jwt__Issuer:-InstitutionErp}
+      Jwt__Audience: ${Jwt__Audience:-InstitutionErpApp}
+      Jwt__ExpiryMinutes: ${Jwt__ExpiryMinutes:-60}
+      Jwt__RefreshTokenExpiryDays: ${Jwt__RefreshTokenExpiryDays:-7}
+      Email__Provider: ${Email__Provider:-Smtp}
+      Email__SmtpHost: mailhog
+      Email__SmtpPort: 1025
+      Email__FromAddress: ${Email__FromAddress:-notifications@institution.edu}
+      Email__FromName: ${Email__FromName:-CampusCore ERP}
+    ports:
+      - "5050:5050"
+    volumes:
+      - uploads_data:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: institution_erp_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres_data:
+  uploads_data:

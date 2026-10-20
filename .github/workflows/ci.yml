@@ -1,0 +1,58 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "main", "prod-hardening" ]
+  pull_request:
+    branches: [ "main", "prod-hardening" ]
+
+jobs:
+  backend:
+    name: Backend Build & Test (.NET 8)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK 8.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore institution-erp/backend/InstitutionErp.sln
+
+      - name: Build backend in Release mode
+        run: dotnet build institution-erp/backend/InstitutionErp.sln -c Release --no-restore /p:TreatWarningsAsErrors=false
+
+      - name: Run Unit Tests
+        run: dotnet test institution-erp/backend/tests/InstitutionErp.UnitTests/InstitutionErp.UnitTests.csproj -c Release --no-build --verbosity normal
+
+      - name: Run Integration Tests
+        run: dotnet test institution-erp/backend/tests/InstitutionErp.IntegrationTests/InstitutionErp.IntegrationTests.csproj -c Release --no-build --verbosity normal
+
+  frontend:
+    name: Frontend Build & Lint (Vite + React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: institution-erp/frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: institution-erp/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build frontend bundle
+        run: npm run build
