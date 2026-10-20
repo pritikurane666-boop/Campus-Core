@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://campuscore-api-jknx.onrender.com/api/$1"
+      "destination": "https://campus-core-nwlt.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
