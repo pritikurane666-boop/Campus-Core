@@ -36,9 +36,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (token && storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setUser({ ...parsed, mustChangePassword: false });
       } catch {
         localStorage.clear();
+      }
+    }
+
+    const savedOtp = sessionStorage.getItem('erp_pending_otp');
+    if (savedOtp) {
+      try {
+        setPendingOtp(JSON.parse(savedOtp));
+      } catch {
+        sessionStorage.removeItem('erp_pending_otp');
       }
     }
     setIsLoading(false);
@@ -61,10 +71,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const emailMasked = anyRes.emailMasked || '';
         const requiresOtp = anyRes.requiresOtp ?? true;
 
-        setPendingOtp({
+        const otpPayload = {
           challengeId: res.challengeId,
           emailMasked,
-        });
+        };
+        setPendingOtp(otpPayload);
+        sessionStorage.setItem('erp_pending_otp', JSON.stringify(otpPayload));
 
         setPendingTotp({
           challengeId: res.challengeId,
@@ -93,15 +105,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Also used by change-password and keep-password flows.
    */
   const setAuthFromResponse = (res: AuthResponse) => {
+    const safeUser = { ...res.user, mustChangePassword: false };
     localStorage.setItem('erp_access_token', res.accessToken);
     localStorage.setItem('erp_refresh_token', res.refreshToken);
-    localStorage.setItem('erp_user', JSON.stringify(res.user));
-    setUser(res.user);
+    localStorage.setItem('erp_user', JSON.stringify(safeUser));
+    setUser(safeUser);
     setPendingTotp(null);
     setPendingOtp(null);
+    sessionStorage.removeItem('erp_pending_otp');
   };
 
-  const clearPendingOtp = () => setPendingOtp(null);
+  const clearPendingOtp = () => {
+    setPendingOtp(null);
+    sessionStorage.removeItem('erp_pending_otp');
+  };
   const clearPendingTotp = () => setPendingTotp(null);
 
   const logout = async () => {

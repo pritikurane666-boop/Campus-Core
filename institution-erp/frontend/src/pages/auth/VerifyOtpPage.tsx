@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/authContext';
 import { authApi } from '../../api/endpoints';
@@ -15,10 +15,12 @@ export const VerifyOtpPage: React.FC = () => {
   const [resendStatus, setResendStatus] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
   const [cooldown, setCooldown] = useState(60);
+  const isSuccessRef = useRef(false);
 
-  // Redirect to login if user arrived here without a pending challenge
+  // Redirect to login only if user arrived here without a pending challenge and isn't logging in
   useEffect(() => {
-    if (!pendingOtp) {
+    const hasToken = !!localStorage.getItem('erp_access_token');
+    if (!pendingOtp && !isSuccessRef.current && !hasToken) {
       navigate('/login', { replace: true });
     }
   }, [pendingOtp, navigate]);
@@ -49,6 +51,7 @@ export const VerifyOtpPage: React.FC = () => {
         code,
       });
 
+      isSuccessRef.current = true;
       setAuthFromResponse(res);
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
@@ -89,7 +92,7 @@ export const VerifyOtpPage: React.FC = () => {
     navigate('/login');
   };
 
-  if (!pendingOtp) return null;
+  if (!pendingOtp && !isSuccessRef.current) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -105,7 +108,7 @@ export const VerifyOtpPage: React.FC = () => {
         <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
           We've sent a 6-digit code to{' '}
           <span className="font-semibold text-slate-800 dark:text-slate-200">
-            {pendingOtp.emailMasked || 'your registered email'}
+            {pendingOtp?.emailMasked || 'your registered email'}
           </span>
         </p>
       </div>

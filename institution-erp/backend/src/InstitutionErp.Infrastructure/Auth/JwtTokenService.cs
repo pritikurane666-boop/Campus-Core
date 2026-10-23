@@ -36,7 +36,7 @@ public class JwtTokenService : IJwtTokenService
             new(ClaimTypes.Name, user.FullName),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new("must_change_password", user.MustChangePassword ? "true" : "false")
+            new("must_change_password", "false")
         };
 
         foreach (var role in roles)

@@ -104,6 +104,18 @@ public class DatabaseSeeder
             _logger.LogInformation("Administrator account already exists. Password preservation active (no overwrite).");
         }
 
+        // 2b. Clear MustChangePassword flag for all accounts so users are never blocked from accessing features
+        var usersWithForcedPasswordChange = await _db.Users.Where(u => u.MustChangePassword).ToListAsync();
+        if (usersWithForcedPasswordChange.Count > 0)
+        {
+            foreach (var u in usersWithForcedPasswordChange)
+            {
+                u.MustChangePassword = false;
+            }
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Cleared MustChangePassword flag for {Count} accounts.", usersWithForcedPasswordChange.Count);
+        }
+
         // 3. Standard Grade Scales (System reference metrics)
         if (!await _db.GradeScales.AnyAsync())
         {

@@ -27,30 +27,7 @@ public class MustChangePasswordMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.User.Identity?.IsAuthenticated == true)
-        {
-            var mustChange = context.User.FindFirst("must_change_password")?.Value;
-            if (string.Equals(mustChange, "true", StringComparison.OrdinalIgnoreCase))
-            {
-                var path = context.Request.Path.Value?.TrimEnd('/') ?? string.Empty;
-                if (!AllowedPaths.Contains(path))
-                {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    context.Response.ContentType = "application/json";
-
-                    var response = new
-                    {
-                        statusCode = StatusCodes.Status403Forbidden,
-                        message = "Password change required before accessing other features.",
-                        mustChangePassword = true
-                    };
-
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(response));
-                    return;
-                }
-            }
-        }
-
+        // Password change is optional and non-blocking: users can access all features directly.
         await _next(context);
     }
 }

@@ -856,7 +856,7 @@ public class AuthController : ControllerBase
         {
             Id = user.Id, Email = user.Email, FirstName = user.FirstName, LastName = user.LastName,
             FullName = user.FullName, PhoneNumber = user.PhoneNumber, AvatarUrl = user.AvatarUrl,
-            IsActive = user.IsActive, MustChangePassword = user.MustChangePassword, Roles = roles
+            IsActive = user.IsActive, MustChangePassword = false, Roles = roles
         }));
     }
 
@@ -1070,7 +1070,7 @@ public class AuthController : ControllerBase
         {
             Id = user.Id, Email = user.Email, FirstName = user.FirstName, LastName = user.LastName,
             FullName = user.FullName, PhoneNumber = user.PhoneNumber, AvatarUrl = user.AvatarUrl,
-            IsActive = user.IsActive, MustChangePassword = user.MustChangePassword,
+            IsActive = user.IsActive, MustChangePassword = false,
             Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
         });
     }
@@ -1176,7 +1176,7 @@ public class AuthController : ControllerBase
         {
             Id = user.Id, Email = user.Email, FirstName = user.FirstName, LastName = user.LastName,
             FullName = user.FullName, PhoneNumber = user.PhoneNumber, AvatarUrl = user.AvatarUrl,
-            IsActive = user.IsActive, MustChangePassword = user.MustChangePassword, Roles = roles
+            IsActive = user.IsActive, MustChangePassword = false, Roles = roles
         });
     }
 

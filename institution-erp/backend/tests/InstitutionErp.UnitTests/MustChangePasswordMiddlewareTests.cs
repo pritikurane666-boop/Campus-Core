@@ -59,7 +59,7 @@ public class MustChangePasswordMiddlewareTests
     [InlineData("/api/v1/attendance/class/123")]
     [InlineData("/api/v1/fees/student/456")]
     [InlineData("/api/v1/exams")]
-    public async Task InvokeAsync_WhenMustChangePasswordIsTrue_BlocksGeneralEndpoints(string path)
+    public async Task InvokeAsync_WhenMustChangePasswordIsTrue_PassesThroughWithoutBlocking(string path)
     {
         var invokedNext = false;
         RequestDelegate next = _ =>
@@ -81,8 +81,8 @@ public class MustChangePasswordMiddlewareTests
 
         await middleware.InvokeAsync(context);
 
-        invokedNext.Should().BeFalse();
-        context.Response.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
+        invokedNext.Should().BeTrue();
+        context.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
     }
 
     [Theory]
