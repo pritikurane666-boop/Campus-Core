@@ -34,6 +34,12 @@ public static class CliRunner
             return true;
         }
 
+        if (args[0] == "inspect-classes")
+        {
+            await RunInspectClassesAsync(args);
+            return true;
+        }
+
         if (args[0] != "reset-2fa") return false;
 
         var email = GetArgValue(args, "--email");
@@ -170,6 +176,39 @@ public static class CliRunner
             Console.WriteLine($"Active Login Challenges: {challengeCount}");
         }
         Console.WriteLine($"--------------------------------------------------");
+    }
+
+    private static async Task RunInspectClassesAsync(string[] args)
+    {
+        var host = Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration(config =>
+            {
+                config.AddEnvironmentVariables();
+                config.AddJsonFile("appsettings.json", optional: true);
+                config.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true);
+            })
+            .ConfigureServices((ctx, services) =>
+            {
+                services.AddInfrastructure(ctx.Configuration);
+            })
+            .Build();
+
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var years = await db.AcademicYears.AsNoTracking().ToListAsync();
+        Console.WriteLine($"[INSPECT-CLASSES] Found {years.Count} Academic Year(s):");
+        foreach (var y in years)
+        {
+            Console.WriteLine($"  Year ID: {y.Id}, Name: {y.Name}, Active: {y.IsActive}, Deleted: {y.IsDeleted}");
+        }
+
+        var classes = await db.Classes.Include(c => c.AcademicYear).AsNoTracking().ToListAsync();
+        Console.WriteLine($"[INSPECT-CLASSES] Found {classes.Count} ClassRoom(s):");
+        foreach (var c in classes)
+        {
+            Console.WriteLine($"  Class ID: {c.Id}, Name: {c.Name}, Section: {c.Section}, Full: {c.FullName}, Year: {c.AcademicYear?.Name}, Deleted: {c.IsDeleted}");
+        }
     }
 
     private static string? GetArgValue(string[] args, string key)

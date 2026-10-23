@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../store/authContext';
-import { Lock, Mail, GraduationCap, AlertCircle } from 'lucide-react';
+import { Lock, Mail, GraduationCap, AlertCircle, Shield } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -127,13 +127,24 @@ export const LoginPage: React.FC = () => {
           </form>
         </div>
 
-        <div className="text-center mt-6">
-          <Link
-            to="/admissions/apply"
-            className="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400"
-          >
-            Apply for new student admission &rarr;
-          </Link>
+        <div className="text-center mt-6 space-y-2">
+          <div>
+            <Link
+              to="/admissions/apply"
+              className="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400"
+            >
+              Apply for new student admission &rarr;
+            </Link>
+          </div>
+          <div>
+            <Link
+              to="/admin/login"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+            >
+              <Shield className="w-3.5 h-3.5 text-amber-500" />
+              <span>Administrator Portal (Direct Sign In)</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

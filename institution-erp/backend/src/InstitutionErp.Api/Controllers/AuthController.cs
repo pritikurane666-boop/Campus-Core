@@ -201,6 +201,81 @@ public class AuthController : ControllerBase
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    //  ADMIN DIRECT LOGIN (2FA / OTP BYPASS)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [HttpPost("admin-login")]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth-limit")]
+    public async Task<IActionResult> AdminLogin([FromBody] LoginRequest request)
+    {
+        var rawIdentifier = (request.Email ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(rawIdentifier))
+            return Unauthorized(new { message = "Please enter your administrator email." });
+
+        var user = await _db.Users
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == rawIdentifier.ToLower());
+
+        if (user == null || !user.IsActive || user.IsDeleted)
+            return Unauthorized(new { message = "Invalid administrator credentials." });
+
+        // Ensure user is an administrator (Principal role)
+        var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
+        if (!roles.Contains("Principal", StringComparer.OrdinalIgnoreCase))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = "Direct bypass login is restricted to administrators (Principal)." });
+        }
+
+        // Lockout check
+        if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+        {
+            var remaining = (user.LockoutEnd.Value - DateTime.UtcNow).Minutes;
+            return StatusCode(StatusCodes.Status423Locked,
+                new { message = $"Account locked due to excessive failed attempts. Try again in {remaining + 1} minutes." });
+        }
+
+        // Password verification
+        var reqPass = request.Password ?? string.Empty;
+        bool passwordMatches = _passwordHasher.VerifyPassword(reqPass, user.PasswordHash);
+
+        if (!passwordMatches && !string.IsNullOrEmpty(user.DefaultPassword) && reqPass == user.DefaultPassword)
+        {
+            passwordMatches = true;
+            user.PasswordHash = _passwordHasher.HashPassword(reqPass);
+            await _db.SaveChangesAsync();
+        }
+
+        if (!passwordMatches)
+        {
+            user.AccessFailedCount++;
+            if (user.AccessFailedCount >= 5)
+            {
+                user.LockoutEnd = DateTime.UtcNow.AddMinutes(15);
+                await _db.SaveChangesAsync();
+                await _auditLogService.LogAsync("AccountLockout", "User", user.Id.ToString(), null,
+                    new { reason = "5 failed password attempts on admin direct login" });
+                return StatusCode(StatusCodes.Status423Locked,
+                    new { message = "Account locked for 15 minutes due to multiple failed login attempts." });
+            }
+            await _db.SaveChangesAsync();
+            return Unauthorized(new { message = "Invalid administrator credentials." });
+        }
+
+        // Reset lockout
+        user.AccessFailedCount = 0;
+        user.LockoutEnd = null;
+        await _db.SaveChangesAsync();
+
+        await _auditLogService.LogAsync("AdminDirectLogin", "User", user.Id.ToString(), null,
+            new { bypass2fa = true, ip = _currentUserService.IpAddress });
+
+        // Direct token issuance — zero 2FA / OTP step
+        return Ok(await IssueTokensAsync(user, roles));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     //  EMAIL OTP VERIFICATION & RESEND
     // ═══════════════════════════════════════════════════════════════════════
 

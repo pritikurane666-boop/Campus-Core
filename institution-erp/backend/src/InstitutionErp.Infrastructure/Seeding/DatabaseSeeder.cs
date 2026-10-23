@@ -118,5 +118,46 @@ public class DatabaseSeeder
             );
             await _db.SaveChangesAsync();
         }
+
+        // 4. Default Academic Year & Classes (ensures admissions and enrollment always have active classes)
+        var defaultYear = await _db.AcademicYears.FirstOrDefaultAsync(y => !y.IsDeleted);
+        if (defaultYear == null)
+        {
+            defaultYear = new AcademicYear
+            {
+                Name = "2026-2027",
+                StartDate = DateTime.SpecifyKind(new DateTime(2026, 6, 1), DateTimeKind.Utc),
+                EndDate = DateTime.SpecifyKind(new DateTime(2027, 5, 31), DateTimeKind.Utc),
+                IsActive = true
+            };
+            _db.AcademicYears.Add(defaultYear);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Default Academic Year 2026-2027 created.");
+        }
+
+        if (!await _db.Classes.AnyAsync(c => !c.IsDeleted))
+        {
+            var defaultClasses = new List<ClassRoom>
+            {
+                new ClassRoom { Name = "Class 1", Section = "A", Capacity = 40, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 2", Section = "A", Capacity = 40, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 3", Section = "A", Capacity = 40, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 4", Section = "A", Capacity = 40, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 5", Section = "A", Capacity = 40, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 6", Section = "A", Capacity = 40, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 7", Section = "A", Capacity = 40, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 8", Section = "A", Capacity = 40, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 9", Section = "A", Capacity = 40, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 10", Section = "A", Capacity = 40, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 11 - Science", Section = "A", Capacity = 50, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 11 - Commerce", Section = "A", Capacity = 50, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 12 - Science", Section = "A", Capacity = 50, AcademicYearId = defaultYear.Id },
+                new ClassRoom { Name = "Class 12 - Commerce", Section = "A", Capacity = 50, AcademicYearId = defaultYear.Id }
+            };
+
+            _db.Classes.AddRange(defaultClasses);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Default institutional classes seeded for {Year}.", defaultYear.Name);
+        }
     }
 }

@@ -11,6 +11,7 @@ interface AuthContextType {
   /** Non-null when the server returned a legacy TOTP challenge */
   pendingTotp: PendingTotpChallenge | null;
   login: (email: string, pass: string) => Promise<{ requiresOtp?: boolean; requiresTotp?: boolean; requiresTotpSetup?: boolean }>;
+  adminLogin: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
   hasRole: (roles: UserRole | UserRole[]) => boolean;
   clearMustChangePassword: (authData?: any) => void;
@@ -88,6 +89,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
+   * Dedicated Admin Direct Login (2FA / OTP Bypass).
+   * Verifies admin credentials and directly issues tokens.
+   */
+  const adminLogin = async (email: string, pass: string) => {
+    setIsLoading(true);
+    try {
+      const res = await authApi.adminLogin({ email, password: pass });
+      setAuthFromResponse(res);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
    * Called after successful OTP verify to complete the login.
    * Also used by change-password and keep-password flows.
    */
@@ -141,6 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         pendingOtp,
         pendingTotp,
         login,
+        adminLogin,
         logout,
         hasRole,
         clearMustChangePassword,

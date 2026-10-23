@@ -24,6 +24,7 @@ public class AcademicYearsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<List<AcademicYearDto>>> GetAcademicYears()
     {
         var years = await _db.AcademicYears
@@ -145,6 +146,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<List<ClassRoomDto>>> GetClasses()
     {
         var classes = await _db.Classes

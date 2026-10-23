@@ -8,6 +8,7 @@ import { PublicLayout } from '../layouts/PublicLayout';
 
 // Auth Pages
 import { LoginPage } from '../pages/auth/LoginPage';
+import { AdminLoginPage } from '../pages/auth/AdminLoginPage';
 import { ForgotPasswordPage, ResetPasswordPage } from '../pages/auth/PasswordPages';
 import { VerifyOtpPage } from '../pages/auth/VerifyOtpPage';
 
@@ -92,6 +93,8 @@ export const AppRoutes: React.FC = () => {
 
       {/* Standalone Auth Routes */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route path="/admin-login" element={<Navigate to="/admin/login" replace />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/auth/verify-otp" element={<VerifyOtpPage />} />

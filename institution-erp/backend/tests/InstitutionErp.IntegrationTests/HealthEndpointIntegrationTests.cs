@@ -17,7 +17,9 @@ public class HealthEndpointIntegrationTests : IClassFixture<WebApplicationFactor
     [Theory]
     [InlineData("/health")]
     [InlineData("/api/v1/health")]
-    public async Task HealthEndpoint_ReturnsOk_WithoutAuthentication(string url)
+    [InlineData("/api/v1/classes")]
+    [InlineData("/api/v1/academic-years")]
+    public async Task PublicEndpoints_ReturnOk_WithoutAuthentication(string url)
     {
         var client = _factory.CreateClient();
 
@@ -41,11 +43,20 @@ public class HealthEndpointIntegrationTests : IClassFixture<WebApplicationFactor
     }
 
     [Fact]
-    public async Task TotpVerify_RouteExists_ReturnsBadRequest_WhenChallengeEmpty()
+    public async Task AdminLogin_RouteExists_ReturnsBadRequest_WhenEmptyCredentials()
     {
         var client = _factory.CreateClient();
-        var content = new StringContent("{\"challengeId\":\"00000000-0000-0000-0000-000000000000\"}", System.Text.Encoding.UTF8, "application/json");
-        var response = await client.PostAsync("/api/v1/auth/2fa/verify", content);
+        var content = new StringContent("{\"email\":\"\",\"password\":\"\"}", System.Text.Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/api/v1/auth/admin-login", content);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task VerifyOtp_RouteExists_ReturnsBadRequest_WhenEmpty()
+    {
+        var client = _factory.CreateClient();
+        var content = new StringContent("{\"challengeId\":\"00000000-0000-0000-0000-000000000000\",\"code\":\"123456\"}", System.Text.Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/api/v1/auth/verify-otp", content);
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }
