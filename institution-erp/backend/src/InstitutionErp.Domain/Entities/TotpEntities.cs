@@ -40,7 +40,7 @@ public class UserTotp
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 }
 
 /// <summary>
@@ -61,7 +61,7 @@ public class RecoveryCode
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 }
 
 /// <summary>
@@ -87,7 +87,7 @@ public class LoginChallenge
     public string? UserAgent { get; set; }
 
     // Navigation
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 }
 
 /// <summary>
@@ -110,5 +110,5 @@ public class TrustedDevice
     public string? UserAgentSummary { get; set; }
 
     // Navigation
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 }

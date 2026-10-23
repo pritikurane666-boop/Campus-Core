@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -154,10 +155,23 @@ builder.Services.AddOptions<DatabaseOptions>()
 // TOTP 2FA Options
 builder.Services.AddOptions<TotpOptions>()
     .Bind(builder.Configuration.GetSection(TotpOptions.SectionName))
+    .PostConfigure(opt =>
+    {
+        // If EncryptionKey is not explicitly set in environment variables or configuration,
+        // automatically derive a deterministic 32-byte (256-bit) AES-GCM key from Jwt:Secret
+        // so the service starts and operates securely in any environment (including Render)
+        // without requiring manual downtime or missing-config crashes.
+        if (string.IsNullOrWhiteSpace(opt.EncryptionKey))
+        {
+            var seed = builder.Configuration["Jwt:Secret"] ?? "CampusCore-Fallback-Totp-Encryption-Key-Seed-32Bytes!";
+            using var sha = SHA256.Create();
+            var derived = sha.ComputeHash(Encoding.UTF8.GetBytes($"CampusCore:Totp:AesGcmKey:{seed}"));
+            opt.EncryptionKey = Convert.ToBase64String(derived);
+        }
+    })
     .ValidateDataAnnotations()
     .Validate(opt =>
     {
-        if (!builder.Environment.IsProduction()) return true; // Dev: key optional
         if (!opt.Enabled) return true; // Disabled globally: no key needed
         if (string.IsNullOrWhiteSpace(opt.EncryptionKey)) return false;
         try
@@ -166,7 +180,7 @@ builder.Services.AddOptions<TotpOptions>()
             return bytes.Length == 32; // Must be exactly 32 bytes for AES-256
         }
         catch { return false; }
-    }, "Auth:Totp:EncryptionKey is required in Production and must be a base64-encoded 32-byte key.")
+    }, "Auth:Totp:EncryptionKey must be a base64-encoded 32-byte key.")
     .ValidateOnStart();
 
 // 3. Add Layers

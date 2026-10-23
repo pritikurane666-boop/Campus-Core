@@ -278,6 +278,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             entity.HasOne(t => t.User)
                   .WithOne()
                   .HasForeignKey<UserTotp>(t => t.UserId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -291,6 +292,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             entity.HasOne(r => r.User)
                   .WithMany()
                   .HasForeignKey(r => r.UserId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -307,6 +309,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             entity.HasOne(c => c.User)
                   .WithMany()
                   .HasForeignKey(c => c.UserId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -322,6 +325,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             entity.HasOne(d => d.User)
                   .WithMany()
                   .HasForeignKey(d => d.UserId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Cascade);
         });
     }
