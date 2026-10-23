@@ -23,6 +23,10 @@ public record TotpVerifyRequest(string ChallengeId, string? Code, string? Recove
 public record RegenerateCodesRequest(string Password, string Code);
 public record AdminReset2faRequest(string TargetUserId, string PrincipalCode);
 
+public record VerifyOtpRequest(string ChallengeId, string Code);
+public record ResendOtpRequest(string ChallengeId);
+public record LoginOtpChallengeResponse(bool RequiresOtp, string ChallengeId, string EmailMasked);
+
 public record LoginChallengeResponse(bool RequiresTotp, bool RequiresTotpSetup, string ChallengeId);
 public record TotpSetupResponse(string OtpAuthUri, string Base32Key);
 public record TotpConfirmResponse(string[] RecoveryCodes, string AccessToken, string RefreshToken, DateTime ExpiresAt, UserDto User);
@@ -43,6 +47,8 @@ public class AuthController : ControllerBase
     private readonly IAuditLogService _auditLogService;
     private readonly ITotpService _totpService;
     private readonly TotpOptions _totpOptions;
+    private readonly IEmailOtpService _emailOtpService;
+    private readonly EmailOtpOptions _emailOtpOptions;
 
     private const string TrustedDeviceCookieName = "cc_td";
 
@@ -54,7 +60,9 @@ public class AuthController : ControllerBase
         INotificationSender notificationSender,
         IAuditLogService auditLogService,
         ITotpService totpService,
-        IOptions<TotpOptions> totpOptions)
+        IOptions<TotpOptions> totpOptions,
+        IEmailOtpService emailOtpService,
+        IOptions<EmailOtpOptions> emailOtpOptions)
     {
         _db = db;
         _jwtService = jwtService;
@@ -64,6 +72,8 @@ public class AuthController : ControllerBase
         _auditLogService = auditLogService;
         _totpService = totpService;
         _totpOptions = totpOptions.Value;
+        _emailOtpService = emailOtpService;
+        _emailOtpOptions = emailOtpOptions.Value;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -154,46 +164,147 @@ public class AuthController : ControllerBase
 
         var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
 
-        // 3. TOTP gate (password succeeded — now check 2FA)
-        if (_totpOptions.Enabled && RoleRequiresTotp(roles))
+        // 3. Email OTP gate (password succeeded — send 6-digit OTP to registered email)
+        if (_emailOtpOptions.Enabled && RoleRequiresEmailOtp(roles))
         {
-            // Check trusted-device cookie
-            if (await IsValidTrustedDevice(user.Id))
-            {
-                // Device is trusted — skip 2FA and issue tokens
-                return Ok(await IssueTokensAsync(user, roles));
-            }
-
-            // Load existing TOTP record
-            var totpRecord = await _db.UserTotps.FirstOrDefaultAsync(t => t.UserId == user.Id);
-            var hasConfirmed2fa = totpRecord?.ConfirmedAt != null;
-
-            // Create a login challenge
-            var challengeType = hasConfirmed2fa ? LoginChallengeType.Verify : LoginChallengeType.Setup;
+            var otpCode = _emailOtpService.GenerateOtpCode();
             var challenge = new LoginChallenge
             {
                 UserId = user.Id,
-                Type = challengeType,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(_totpOptions.ChallengeExpiryMinutes),
+                Type = LoginChallengeType.EmailOtp,
+                OtpCodeHash = _emailOtpService.HashOtp(otpCode),
+                LastOtpSentAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_emailOtpOptions.ExpiryMinutes),
                 IpAddress = _currentUserService.IpAddress,
                 UserAgent = Request.Headers.UserAgent.ToString()[..Math.Min(512, Request.Headers.UserAgent.ToString().Length)]
             };
             _db.LoginChallenges.Add(challenge);
             await _db.SaveChangesAsync();
 
-            await _auditLogService.LogAsync("TotpChallengeCreated", "LoginChallenge", challenge.Id.ToString(),
-                null, new { type = challengeType.ToString(), userId = user.Id });
+            await _auditLogService.LogAsync("EmailOtpChallengeCreated", "LoginChallenge", challenge.Id.ToString(),
+                null, new { userId = user.Id, email = _emailOtpService.MaskEmail(user.Email) });
 
-            // Return challenge response — NO tokens yet
-            return Ok(new LoginChallengeResponse(
-                RequiresTotp: hasConfirmed2fa,
-                RequiresTotpSetup: !hasConfirmed2fa,
-                ChallengeId: challenge.Id.ToString()));
+            // Send OTP email
+            await _emailOtpService.SendOtpEmailAsync(user.Email, user.FullName, otpCode, _emailOtpOptions.ExpiryMinutes);
+
+            return Ok(new
+            {
+                requiresOtp = true,
+                challengeId = challenge.Id.ToString(),
+                emailMasked = _emailOtpService.MaskEmail(user.Email)
+            });
         }
 
-        // 4. No 2FA required — issue tokens directly
+        // 4. No OTP required — issue tokens directly
         await _auditLogService.LogAsync("Login", "User", user.Id.ToString());
         return Ok(await IssueTokensAsync(user, roles));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  EMAIL OTP VERIFICATION & RESEND
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [HttpPost("verify-otp")]
+    [AllowAnonymous]
+    [EnableRateLimiting("totp-limit")]
+    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.ChallengeId) || !Guid.TryParse(request.ChallengeId, out var challengeGuid))
+            return BadRequest(new { message = "Invalid or expired session. Please log in again." });
+
+        if (string.IsNullOrWhiteSpace(request.Code) || request.Code.Trim().Length != 6)
+            return BadRequest(new { message = "Please enter a valid 6-digit verification code." });
+
+        var challenge = await _db.LoginChallenges
+            .Include(c => c.User).ThenInclude(u => u!.UserRoles).ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(c => c.Id == challengeGuid && c.Type == LoginChallengeType.EmailOtp);
+
+        if (challenge == null || challenge.ConsumedAt != null || challenge.ExpiresAt <= DateTime.UtcNow)
+        {
+            return BadRequest(new { message = "Verification session expired. Please log in again." });
+        }
+
+        if (challenge.Attempts >= _emailOtpOptions.MaxAttempts)
+        {
+            challenge.ConsumedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            return BadRequest(new { message = "Too many failed attempts. Please log in again to receive a new code." });
+        }
+
+        var isValid = !string.IsNullOrEmpty(challenge.OtpCodeHash) &&
+                      _emailOtpService.VerifyOtp(request.Code.Trim(), challenge.OtpCodeHash);
+        if (!isValid)
+        {
+            challenge.Attempts++;
+            if (challenge.Attempts >= _emailOtpOptions.MaxAttempts)
+            {
+                challenge.ConsumedAt = DateTime.UtcNow;
+            }
+            await _db.SaveChangesAsync();
+
+            var remaining = _emailOtpOptions.MaxAttempts - challenge.Attempts;
+            return BadRequest(new
+            {
+                message = remaining > 0
+                    ? $"Incorrect verification code. {remaining} attempt(s) remaining."
+                    : "Too many failed attempts. Please request a new code."
+            });
+        }
+
+        challenge.ConsumedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        var user = challenge.User!;
+        var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
+
+        await _auditLogService.LogAsync("EmailOtpVerified", "User", user.Id.ToString(), null, new { challengeId = challenge.Id });
+
+        return Ok(await IssueTokensAsync(user, roles));
+    }
+
+    [HttpPost("resend-otp")]
+    [AllowAnonymous]
+    [EnableRateLimiting("totp-limit")]
+    public async Task<IActionResult> ResendOtp([FromBody] ResendOtpRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.ChallengeId) || !Guid.TryParse(request.ChallengeId, out var challengeGuid))
+            return BadRequest(new { message = "Invalid session. Please log in again." });
+
+        var challenge = await _db.LoginChallenges
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.Id == challengeGuid && c.Type == LoginChallengeType.EmailOtp);
+
+        if (challenge == null || challenge.ConsumedAt != null)
+            return BadRequest(new { message = "Session expired or invalid. Please log in again." });
+
+        if (challenge.LastOtpSentAt.HasValue)
+        {
+            var elapsed = DateTime.UtcNow - challenge.LastOtpSentAt.Value;
+            var cooldown = TimeSpan.FromSeconds(_emailOtpOptions.ResendCooldownSeconds);
+            if (elapsed < cooldown)
+            {
+                var remaining = (int)Math.Ceiling((cooldown - elapsed).TotalSeconds);
+                return StatusCode(StatusCodes.Status429TooManyRequests,
+                    new { message = $"Please wait {remaining} seconds before requesting a new code." });
+            }
+        }
+
+        var otpCode = _emailOtpService.GenerateOtpCode();
+        challenge.OtpCodeHash = _emailOtpService.HashOtp(otpCode);
+        challenge.LastOtpSentAt = DateTime.UtcNow;
+        challenge.ExpiresAt = DateTime.UtcNow.AddMinutes(_emailOtpOptions.ExpiryMinutes);
+        challenge.Attempts = 0;
+        await _db.SaveChangesAsync();
+
+        await _emailOtpService.SendOtpEmailAsync(challenge.User!.Email, challenge.User.FullName, otpCode, _emailOtpOptions.ExpiryMinutes);
+
+        await _auditLogService.LogAsync("EmailOtpResent", "LoginChallenge", challenge.Id.ToString(), null, new { userId = challenge.UserId });
+
+        return Ok(new
+        {
+            message = "Verification code resent successfully.",
+            emailMasked = _emailOtpService.MaskEmail(challenge.User.Email)
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -885,6 +996,13 @@ public class AuthController : ControllerBase
     // ═══════════════════════════════════════════════════════════════════════
     //  PRIVATE HELPERS
     // ═══════════════════════════════════════════════════════════════════════
+
+    private bool RoleRequiresEmailOtp(IEnumerable<string> userRoles)
+    {
+        if (!_emailOtpOptions.Enabled) return false;
+        var required = _emailOtpOptions.GetRequiredRoles();
+        return userRoles.Any(r => required.Contains(r));
+    }
 
     private bool RoleRequiresTotp(IEnumerable<string> userRoles)
     {

@@ -7,7 +7,10 @@ public enum LoginChallengeType
     Verify = 0,
 
     /// <summary>User has no confirmed 2FA and must set it up before receiving tokens.</summary>
-    Setup = 1
+    Setup = 1,
+
+    /// <summary>Email OTP code verification for login.</summary>
+    EmailOtp = 2
 }
 
 /// <summary>
@@ -73,6 +76,8 @@ public class LoginChallenge
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid UserId { get; set; }
     public LoginChallengeType Type { get; set; }
+    public string? OtpCodeHash { get; set; }
+    public DateTime? LastOtpSentAt { get; set; }
 
     /// <summary>Attempts used so far. Challenge is dead when Attempts >= MaxAttempts.</summary>
     public int Attempts { get; set; } = 0;

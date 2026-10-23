@@ -20,15 +20,8 @@ export const LoginPage: React.FC = () => {
     try {
       const result = await login(email, password);
 
-      if (result.requiresTotpSetup) {
-        // User must enrol 2FA before receiving tokens
-        navigate('/auth/2fa/setup');
-        return;
-      }
-
-      if (result.requiresTotp) {
-        // User has 2FA and must verify
-        navigate('/auth/2fa/verify');
+      if (result.requiresOtp || result.requiresTotpSetup || result.requiresTotp) {
+        navigate('/auth/verify-otp');
         return;
       }
 

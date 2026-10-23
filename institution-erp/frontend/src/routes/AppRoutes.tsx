@@ -9,9 +9,7 @@ import { PublicLayout } from '../layouts/PublicLayout';
 // Auth Pages
 import { LoginPage } from '../pages/auth/LoginPage';
 import { ForgotPasswordPage, ResetPasswordPage } from '../pages/auth/PasswordPages';
-import { TotpSetupPage } from '../pages/auth/TotpSetupPage';
-import { TotpVerifyPage } from '../pages/auth/TotpVerifyPage';
-import { RecoveryCodesPage } from '../pages/auth/RecoveryCodesPage';
+import { VerifyOtpPage } from '../pages/auth/VerifyOtpPage';
 
 // Public Admission Pages
 import { ApplyAdmissionPage } from '../pages/public/AdmissionPublicPages';
@@ -96,9 +94,8 @@ export const AppRoutes: React.FC = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/auth/2fa/setup" element={<TotpSetupPage />} />
-      <Route path="/auth/2fa/verify" element={<TotpVerifyPage />} />
-      <Route path="/auth/2fa/recovery-codes" element={<RecoveryCodesPage />} />
+      <Route path="/auth/verify-otp" element={<VerifyOtpPage />} />
+      <Route path="/auth/2fa/*" element={<Navigate to="/auth/verify-otp" replace />} />
 
       {/* Protected Routes with Main ERP Layout */}
       <Route element={<MainLayout />}>

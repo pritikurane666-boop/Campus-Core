@@ -1,20 +1,23 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, UserRole, PendingTotpChallenge, AuthResponse } from '../types';
+import { User, UserRole, PendingTotpChallenge, PendingOtpChallenge, AuthResponse } from '../types';
 import { authApi } from '../api/endpoints';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  /** Non-null when the server returned a TOTP challenge instead of tokens */
+  /** Non-null when the server returned an OTP challenge instead of tokens */
+  pendingOtp: PendingOtpChallenge | null;
+  /** Non-null when the server returned a legacy TOTP challenge */
   pendingTotp: PendingTotpChallenge | null;
-  login: (email: string, pass: string) => Promise<{ requiresTotp?: boolean; requiresTotpSetup?: boolean }>;
+  login: (email: string, pass: string) => Promise<{ requiresOtp?: boolean; requiresTotp?: boolean; requiresTotpSetup?: boolean }>;
   logout: () => Promise<void>;
   hasRole: (roles: UserRole | UserRole[]) => boolean;
   clearMustChangePassword: (authData?: any) => void;
-  /** Called after a successful 2FA verify/confirm to store tokens */
+  /** Called after a successful OTP verify to store tokens */
   setAuthFromResponse: (res: AuthResponse) => void;
-  /** Clears a pending TOTP challenge (e.g., user goes back to login) */
+  /** Clears a pending challenge (e.g., user goes back to login) */
+  clearPendingOtp: () => void;
   clearPendingTotp: () => void;
 }
 
@@ -24,6 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   // Held in memory only (not localStorage) — does NOT persist across page reloads intentionally
+  const [pendingOtp, setPendingOtp] = useState<PendingOtpChallenge | null>(null);
   const [pendingTotp, setPendingTotp] = useState<PendingTotpChallenge | null>(null);
 
   useEffect(() => {
@@ -42,8 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * Login step 1: submit email + password.
-   * - On success (no 2FA): stores tokens, sets user
-   * - On 2FA required: stores challenge in pendingTotp, returns flags
+   * - On success (no OTP): stores tokens, sets user
+   * - On OTP required: stores challenge in pendingOtp, returns flags
    * - On failure: throws (caller handles error display)
    */
   const login = async (email: string, pass: string) => {
@@ -51,13 +55,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await authApi.login({ email, password: pass });
 
-      // Type guard: 2FA challenge response has challengeId but no accessToken
+      // Type guard: challenge response has challengeId but no accessToken
       if ('challengeId' in res && res.challengeId) {
+        const anyRes = res as any;
+        const emailMasked = anyRes.emailMasked || '';
+        const requiresOtp = anyRes.requiresOtp ?? true;
+
+        setPendingOtp({
+          challengeId: res.challengeId,
+          emailMasked,
+        });
+
         setPendingTotp({
           challengeId: res.challengeId,
           requiresSetup: res.requiresTotpSetup ?? false,
         });
+
         return {
+          requiresOtp,
           requiresTotp: res.requiresTotp ?? false,
           requiresTotpSetup: res.requiresTotpSetup ?? false,
         };
@@ -73,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Called after successful 2FA verify or confirm to complete the login.
+   * Called after successful OTP verify to complete the login.
    * Also used by change-password and keep-password flows.
    */
   const setAuthFromResponse = (res: AuthResponse) => {
@@ -82,8 +97,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('erp_user', JSON.stringify(res.user));
     setUser(res.user);
     setPendingTotp(null);
+    setPendingOtp(null);
   };
 
+  const clearPendingOtp = () => setPendingOtp(null);
   const clearPendingTotp = () => setPendingTotp(null);
 
   const logout = async () => {
@@ -121,12 +138,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isAuthenticated: !!user,
         isLoading,
+        pendingOtp,
         pendingTotp,
         login,
         logout,
         hasRole,
         clearMustChangePassword,
         setAuthFromResponse,
+        clearPendingOtp,
         clearPendingTotp,
       }}
     >

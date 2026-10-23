@@ -38,34 +38,52 @@ export interface AuthResponse {
   user: User;
 }
 
-// ─── TOTP 2FA ─────────────────────────────────────────────────────────────
+// ─── Email OTP ─────────────────────────────────────────────────────────────
 
-/** Returned by /auth/login when 2FA is required. No tokens yet. */
-export interface TotpChallengeResponse {
-  requiresTotpSetup: boolean;
-  requiresTotp: boolean;
+export interface LoginOtpChallengeResponse {
+  requiresOtp: boolean;
+  challengeId: string;
+  emailMasked: string;
+}
+
+export interface PendingOtpChallenge {
+  challengeId: string;
+  emailMasked: string;
+}
+
+export interface VerifyOtpRequest {
+  challengeId: string;
+  code: string;
+}
+
+export interface ResendOtpRequest {
   challengeId: string;
 }
 
-/** Returned by /auth/2fa/setup — contains the otpauth URI for QR rendering */
+/** Legacy TOTP types kept for compatibility */
+export interface TotpChallengeResponse {
+  requiresTotpSetup?: boolean;
+  requiresTotp?: boolean;
+  requiresOtp?: boolean;
+  challengeId: string;
+  emailMasked?: string;
+}
+
 export interface TotpSetupResponse {
   otpAuthUri: string;
   base32Key: string;
 }
 
-/** Returned by /auth/2fa/confirm — recovery codes are shown ONCE */
 export interface TotpConfirmResponse extends AuthResponse {
   recoveryCodes: string[];
 }
 
-/** Returned by /auth/2fa/status */
 export interface TwoFaStatus {
   isEnabled: boolean;
   recoveryCodesRemaining: number;
   trustedDeviceCount: number;
 }
 
-/** In-memory session state held during the 2FA challenge flow */
 export interface PendingTotpChallenge {
   challengeId: string;
   requiresSetup: boolean;

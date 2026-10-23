@@ -304,6 +304,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             entity.HasIndex(c => c.ExpiresAt);
             entity.Property(c => c.Type)
                   .HasConversion<int>();
+            entity.Property(c => c.OtpCodeHash).HasMaxLength(64);
+            entity.Property(c => c.LastOtpSentAt);
             entity.Property(c => c.IpAddress).HasMaxLength(64);
             entity.Property(c => c.UserAgent).HasMaxLength(512);
             entity.HasOne(c => c.User)

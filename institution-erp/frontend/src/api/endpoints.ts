@@ -15,7 +15,14 @@ export const authApi = {
     apiClient.post('/auth/reset-password', data).then(r => r.data),
   getMe: () => apiClient.get<T.User>('/auth/me').then(r => r.data),
 
-  // ─── TOTP 2FA ────────────────────────────────────────────────────────────
+  // ─── Email OTP ────────────────────────────────────────────────────────────
+  verifyOtp: (data: { challengeId: string; code: string }) =>
+    apiClient.post<T.AuthResponse>('/auth/verify-otp', data).then(r => r.data),
+
+  resendOtp: (challengeId: string) =>
+    apiClient.post<{ message: string; emailMasked?: string }>('/auth/resend-otp', { challengeId }).then(r => r.data),
+
+  // ─── Legacy 2FA ────────────────────────────────────────────────────────────
   /** Request setup: returns { otpAuthUri, base32Key } */
   totp2faSetup: (challengeId: string) =>
     apiClient.post<T.TotpSetupResponse>('/auth/2fa/setup', { challengeId }).then(r => r.data),

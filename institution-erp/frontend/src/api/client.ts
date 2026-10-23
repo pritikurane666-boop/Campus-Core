@@ -46,6 +46,8 @@ apiClient.interceptors.response.use(
       if (
         originalRequest.url?.includes('/auth/login') ||
         originalRequest.url?.includes('/auth/refresh') ||
+        originalRequest.url?.includes('/auth/verify-otp') ||
+        originalRequest.url?.includes('/auth/resend-otp') ||
         originalRequest.url?.includes('/auth/2fa/')
       ) {
         return Promise.reject(error);

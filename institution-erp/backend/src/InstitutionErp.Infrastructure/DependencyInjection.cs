@@ -59,8 +59,11 @@ public static class DependencyInjection
         });
 
         // Auth & Security
+        services.Configure<InstitutionErp.Application.Common.Configuration.EmailOtpOptions>(
+            configuration.GetSection(InstitutionErp.Application.Common.Configuration.EmailOtpOptions.SectionName));
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IEmailOtpService, EmailOtpService>();
         services.AddScoped<ITotpService, TotpService>();
 
         // Storage & PDF

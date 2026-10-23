@@ -1216,6 +1216,15 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("ip_address");
 
+                    b.Property<DateTime?>("LastOtpSentAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_otp_sent_at");
+
+                    b.Property<string>("OtpCodeHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("otp_code_hash");
+
                     b.Property<int>("Type")
                         .HasColumnType("integer")
                         .HasColumnName("type");
@@ -2548,7 +2557,6 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_login_challenges_users_user_id");
 
                     b.Navigation("User");
@@ -2582,7 +2590,6 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_recovery_codes_users_user_id");
 
                     b.Navigation("User");
@@ -2737,7 +2744,6 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_trusted_devices_users_user_id");
 
                     b.Navigation("User");
@@ -2768,7 +2774,6 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                         .WithOne()
                         .HasForeignKey("InstitutionErp.Domain.Entities.UserTotp", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_user_totp_users_user_id");
 
                     b.Navigation("User");
