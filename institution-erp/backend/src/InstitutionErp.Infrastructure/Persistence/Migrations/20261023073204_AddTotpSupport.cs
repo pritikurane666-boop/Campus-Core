@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,12 +11,6 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "default_password",
-                table: "users",
-                type: "text",
-                nullable: true);
-
             migrationBuilder.CreateTable(
                 name: "login_challenges",
                 columns: table => new
@@ -165,10 +159,6 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "user_totp");
-
-            migrationBuilder.DropColumn(
-                name: "default_password",
-                table: "users");
         }
     }
 }

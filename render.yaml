@@ -11,6 +11,8 @@ services:
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
+      - key: AUTO_MIGRATE
+        value: "true"
       - key: PORT
         value: "10000"
       - key: ConnectionStrings__DefaultConnection
