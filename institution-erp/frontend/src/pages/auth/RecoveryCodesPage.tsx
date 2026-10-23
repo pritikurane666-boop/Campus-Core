@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../store/authContext';
 import { AuthResponse } from '../../types';
@@ -13,19 +13,41 @@ export const RecoveryCodesPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setAuthFromResponse } = useAuth();
+  const [isSaved, setIsSaved] = useState(false);
 
   const state = location.state as LocationState | null;
 
-  // Guard: require codes to be passed via location state
-  useEffect(() => {
-    if (!state?.recoveryCodes) {
-      navigate('/login', { replace: true });
+  // Retrieve recovery codes from location.state or sessionStorage fallback
+  const recoveryCodes: string[] = state?.recoveryCodes || (() => {
+    try {
+      const stored = sessionStorage.getItem('temp_recovery_codes');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
     }
-  }, [state, navigate]);
+  })();
 
-  if (!state?.recoveryCodes) return null;
+  const authResponse: AuthResponse | null = state?.authResponse || (() => {
+    try {
+      const stored = sessionStorage.getItem('temp_auth_response');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  })();
 
-  const { recoveryCodes, authResponse } = state;
+  // Guard: require codes to be passed via location state or sessionStorage
+  useEffect(() => {
+    if (!recoveryCodes || recoveryCodes.length === 0) {
+      if (!localStorage.getItem('erp_access_token')) {
+        navigate('/login', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+    }
+  }, [recoveryCodes, navigate]);
+
+  if (!recoveryCodes || recoveryCodes.length === 0) return null;
 
   const copyAll = async () => {
     const text = recoveryCodes.join('\n');
@@ -73,8 +95,15 @@ export const RecoveryCodesPage: React.FC = () => {
   };
 
   const handleContinue = () => {
-    // Now finalise the login by storing the tokens
-    setAuthFromResponse(authResponse);
+    if (authResponse) {
+      setAuthFromResponse(authResponse);
+    }
+    try {
+      sessionStorage.removeItem('temp_recovery_codes');
+      sessionStorage.removeItem('temp_auth_response');
+    } catch {
+      // Ignore
+    }
     navigate('/dashboard', { replace: true });
   };
 
@@ -139,15 +168,13 @@ export const RecoveryCodesPage: React.FC = () => {
           </div>
 
           {/* Confirmation checkbox */}
-          <label className="flex items-start gap-3 mb-5 cursor-pointer">
+          <label className="flex items-start gap-3 mb-5 cursor-pointer select-none">
             <input
               type="checkbox"
               id="codes-saved"
-              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
-              onChange={(e) => {
-                const btn = document.getElementById('continue-btn') as HTMLButtonElement | null;
-                if (btn) btn.disabled = !e.target.checked;
-              }}
+              checked={isSaved}
+              onChange={(e) => setIsSaved(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
             />
             <span className="text-xs text-slate-600 dark:text-slate-400">
               I have saved my recovery codes in a secure location.
@@ -157,9 +184,9 @@ export const RecoveryCodesPage: React.FC = () => {
           <button
             id="continue-btn"
             type="button"
-            disabled
+            disabled={!isSaved}
             onClick={handleContinue}
-            className="w-full py-2.5 px-4 text-sm font-semibold rounded-xl text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-primary-500/20 flex items-center justify-center gap-2"
+            className="w-full py-2.5 px-4 text-sm font-semibold rounded-xl text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-primary-500/20 flex items-center justify-center gap-2 cursor-pointer"
           >
             <Check className="w-4 h-4" /> Continue to Dashboard
           </button>

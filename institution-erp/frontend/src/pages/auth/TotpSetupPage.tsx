@@ -11,7 +11,7 @@ type Step = 'loading' | 'scan' | 'confirm' | 'error';
 
 export const TotpSetupPage: React.FC = () => {
   const navigate = useNavigate();
-  const { pendingTotp } = useAuth();
+  const { pendingTotp, setAuthFromResponse } = useAuth();
 
   const [step, setStep] = useState<Step>('loading');
   const [setupData, setSetupData] = useState<TotpSetupResponse | null>(null);
@@ -51,16 +51,29 @@ export const TotpSetupPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const res = await authApi.totp2faConfirm(pendingTotp.challengeId, code);
-      // Navigate to recovery codes page — pass codes via location state
+      const authData = {
+        accessToken: res.accessToken,
+        refreshToken: res.refreshToken,
+        expiresAt: res.expiresAt,
+        user: res.user,
+      };
+
+      // Set auth immediately in context & localStorage
+      setAuthFromResponse(authData);
+
+      // Persist to sessionStorage as a resilient fallback
+      try {
+        sessionStorage.setItem('temp_recovery_codes', JSON.stringify(res.recoveryCodes));
+        sessionStorage.setItem('temp_auth_response', JSON.stringify(authData));
+      } catch {
+        // Ignore storage errors
+      }
+
+      // Navigate to recovery codes page
       navigate('/auth/2fa/recovery-codes', {
         state: {
           recoveryCodes: res.recoveryCodes,
-          authResponse: {
-            accessToken: res.accessToken,
-            refreshToken: res.refreshToken,
-            expiresAt: res.expiresAt,
-            user: res.user,
-          },
+          authResponse: authData,
         },
         replace: true,
       });
