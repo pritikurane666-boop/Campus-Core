@@ -21,8 +21,8 @@ public class EmailOtpOptions
     [Range(10, 300)]
     public int ResendCooldownSeconds { get; set; } = 60;
 
-    /// <summary>Comma-separated role names that require email OTP. Default: Principal,Teacher,Student.</summary>
-    public string RequiredRoles { get; set; } = "Principal,Teacher,Student";
+    /// <summary>Comma-separated role names that require email OTP. Default: Teacher,Student (Principal bypasses OTP).</summary>
+    public string RequiredRoles { get; set; } = "Teacher,Student";
 
     /// <summary>Returns the parsed set of roles that require Email OTP.</summary>
     public IReadOnlySet<string> GetRequiredRoles()

@@ -49,6 +49,7 @@ public class AuthController : ControllerBase
     private readonly TotpOptions _totpOptions;
     private readonly IEmailOtpService _emailOtpService;
     private readonly EmailOtpOptions _emailOtpOptions;
+    private readonly AdminOptions _adminOptions;
 
     private const string TrustedDeviceCookieName = "cc_td";
 
@@ -62,7 +63,8 @@ public class AuthController : ControllerBase
         ITotpService totpService,
         IOptions<TotpOptions> totpOptions,
         IEmailOtpService emailOtpService,
-        IOptions<EmailOtpOptions> emailOtpOptions)
+        IOptions<EmailOtpOptions> emailOtpOptions,
+        IOptions<AdminOptions> adminOptions)
     {
         _db = db;
         _jwtService = jwtService;
@@ -74,6 +76,7 @@ public class AuthController : ControllerBase
         _totpOptions = totpOptions.Value;
         _emailOtpService = emailOtpService;
         _emailOtpOptions = emailOtpOptions.Value;
+        _adminOptions = adminOptions.Value;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -164,8 +167,12 @@ public class AuthController : ControllerBase
 
         var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
 
-        // 3. Email OTP gate (password succeeded — send 6-digit OTP to registered email)
-        if (_emailOtpOptions.Enabled && RoleRequiresEmailOtp(roles))
+        // 3. Admin / Principal bypass: Administrator accounts bypass 2FA / Email OTP completely
+        var isPrincipalOrAdmin = roles.Contains("Principal", StringComparer.OrdinalIgnoreCase) ||
+                                 string.Equals(user.Email, _adminOptions.Email, StringComparison.OrdinalIgnoreCase);
+
+        // Non-admin roles (Teacher, Student) undergo Email OTP verification
+        if (!isPrincipalOrAdmin && _emailOtpOptions.Enabled && RoleRequiresEmailOtp(roles))
         {
             var otpCode = _emailOtpService.GenerateOtpCode();
             var challenge = new LoginChallenge
@@ -195,8 +202,8 @@ public class AuthController : ControllerBase
             });
         }
 
-        // 4. No OTP required — issue tokens directly
-        await _auditLogService.LogAsync("Login", "User", user.Id.ToString());
+        // 4. Admin or roles without OTP requirement — issue tokens directly
+        await _auditLogService.LogAsync("Login", "User", user.Id.ToString(), null, new { bypassOtp = isPrincipalOrAdmin });
         return Ok(await IssueTokensAsync(user, roles));
     }
 

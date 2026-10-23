@@ -4,8 +4,6 @@ import * as T from '../types';
 export const authApi = {
   login: (data: { email: string; password: string }) =>
     apiClient.post<T.AuthResponse | T.TotpChallengeResponse>('/auth/login', data).then(r => r.data),
-  adminLogin: (data: { email: string; password: string }) =>
-    apiClient.post<T.AuthResponse>('/auth/admin-login', data).then(r => r.data),
   logout: () => apiClient.post('/auth/logout').then(r => r.data),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     apiClient.post<T.AuthResponse>('/auth/change-password', data).then(r => r.data),
