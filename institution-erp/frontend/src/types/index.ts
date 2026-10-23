@@ -38,6 +38,39 @@ export interface AuthResponse {
   user: User;
 }
 
+// ─── TOTP 2FA ─────────────────────────────────────────────────────────────
+
+/** Returned by /auth/login when 2FA is required. No tokens yet. */
+export interface TotpChallengeResponse {
+  requiresTotpSetup: boolean;
+  requiresTotp: boolean;
+  challengeId: string;
+}
+
+/** Returned by /auth/2fa/setup — contains the otpauth URI for QR rendering */
+export interface TotpSetupResponse {
+  otpAuthUri: string;
+  base32Key: string;
+}
+
+/** Returned by /auth/2fa/confirm — recovery codes are shown ONCE */
+export interface TotpConfirmResponse extends AuthResponse {
+  recoveryCodes: string[];
+}
+
+/** Returned by /auth/2fa/status */
+export interface TwoFaStatus {
+  isEnabled: boolean;
+  recoveryCodesRemaining: number;
+  trustedDeviceCount: number;
+}
+
+/** In-memory session state held during the 2FA challenge flow */
+export interface PendingTotpChallenge {
+  challengeId: string;
+  requiresSetup: boolean;
+}
+
 export interface PagedResult<T> {
   items: T[];
   pageNumber: number;

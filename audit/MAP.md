@@ -12,7 +12,9 @@
 | 1. PRESENTATION LAYER (Vercel SPA)                                                   |
 |    - React 19 + TypeScript + Vite + Tailwind CSS + Lucide Icons                       |
 |    - Routes: AppRoutes.tsx (RoleDashboardDispatcher, RoleStudentsDispatcher, etc.)    |
-|    - Pages: 22 Page Components in src/pages/ (auth, academics, attendance, exams, etc.)|
+|    - Auth MFA: TotpSetupPage (QR render via qrcode.react), TotpVerifyPage,            |
+|      RecoveryCodesPage, TotpInput (6-box auto-focus code input)                       |
+|    - Pages: 25 Page Components in src/pages/ (auth, academics, attendance, exams, etc.)|
 |    - State: TanStack React Query v5 + React Context (AuthContext)                     |
 +---------------------------------------------------------------------------------------+
                                           |
@@ -22,6 +24,7 @@
 | 2. API / PRESENTATION HOST (.NET 8 Web API on Render Docker Container)                |
 |    - Program.cs: Middleware pipeline, CORS, Forwarded Headers, Auth, Rate Limiting    |
 |    - 10 Controller Files hosting 22 Controller Classes (BaseApiController)             |
+|    - AuthController: TOTP 2FA setup, confirmation, challenge verification, recovery   |
 |    - Direct DbContext injection across all controllers (no MediatR / AutoMapper)       |
 +---------------------------------------------------------------------------------------+
                                           |
@@ -29,8 +32,11 @@
                                           v
 +---------------------------------------------------------------------------------------+
 | 3. APPLICATION LAYER (InstitutionErp.Application)                                    |
-|    - Common Interfaces: IApplicationDbContext, IJwtTokenService, IPasswordHasher      |
-|    - DTO Contracts: StudentDto, TeacherDto, ExamDto, FeeDto, AuthResponse, etc.       |
+|    - Common Interfaces: IApplicationDbContext, IJwtTokenService, IPasswordHasher,     |
+|      ITotpService (RFC 6238 generation, validation, recovery code handling)           |
+|    - Configuration: TotpOptions (Issuer, Period, Drift, RequiredRoles per role)       |
+|    - DTO Contracts: StudentDto, TeacherDto, ExamDto, FeeDto, AuthResponse,            |
+|      TotpSetupResponse, TotpVerifyRequest, etc.                                       |
 |    - Validators: FluentValidation classes in AppValidators.cs                         |
 |    - Mapping: Mapster configurations                                                  |
 +---------------------------------------------------------------------------------------+
@@ -40,7 +46,8 @@
 +---------------------------------------------------------------------------------------+
 | 4. INFRASTRUCTURE LAYER (InstitutionErp.Infrastructure)                              |
 |    - Persistence: ApplicationDbContext (EF Core 8 with SnakeCase naming convention)   |
-|    - Auth: PasswordHasher (BCrypt.Net-Next), JwtTokenService (System.IdentityModel)   |
+|    - Auth: PasswordHasher (BCrypt.Net-Next), JwtTokenService (System.IdentityModel),   |
+|      TotpService (Otp.NET RFC 6238, HMAC-SHA1, 6 digits, 30s period, SHA-256 backup)  |
 |    - Storage: FileStorageService (Local Disk -> Supabase Storage in Prod)             |
 |    - PDF Generation: QuestPdfService (Receipts, Report Cards)                         |
 |    - Payments: RazorpayPaymentGateway (HMAC-SHA256 signature verification)            |
@@ -55,7 +62,8 @@
 | 5. DOMAIN LAYER (InstitutionErp.Domain)                                              |
 |    - BaseEntity: Id (Guid), CreatedAt, CreatedBy, UpdatedAt, UpdatedBy, IsDeleted     |
 |    - Enums: UserRoleType, StudentStatus, AttendanceStatus, ExamStatus, etc.           |
-|    - 32 Domain Entities across 10 files                                               |
+|    - Entities: User (TotpSecret, IsTotpEnabled, TotpEnrolledAt), UserTotpRecoveryCode,|
+|      TotpLoginChallenge, TotpTrustedDevice, plus 32 academic & admin entities         |
 +---------------------------------------------------------------------------------------+
                                           |
                                           | PostgreSQL Connection (Port 5432 + SSL)

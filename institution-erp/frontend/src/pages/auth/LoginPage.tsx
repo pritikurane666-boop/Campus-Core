@@ -18,7 +18,20 @@ export const LoginPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
+      const result = await login(email, password);
+
+      if (result.requiresTotpSetup) {
+        // User must enrol 2FA before receiving tokens
+        navigate('/auth/2fa/setup');
+        return;
+      }
+
+      if (result.requiresTotp) {
+        // User has 2FA and must verify
+        navigate('/auth/2fa/verify');
+        return;
+      }
+
       navigate('/dashboard');
     } catch (err: any) {
       let msg = 'Invalid email or password.';
@@ -28,6 +41,8 @@ export const LoginPage: React.FC = () => {
         msg = `Backend server is unavailable or waking up (HTTP ${err.response.status} Bad Gateway). Please check Render deployment logs.`;
       } else if (err.response.status === 401) {
         msg = err.response?.data?.message || 'Invalid email or password.';
+      } else if (err.response.status === 423) {
+        msg = err.response?.data?.message || 'Account locked. Please try again later.';
       } else {
         msg = err.response?.data?.message || err.response?.data?.detail || `Server error (${err.response.status}).`;
       }

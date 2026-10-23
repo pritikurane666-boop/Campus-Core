@@ -38,5 +38,11 @@ public interface IApplicationDbContext
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<AppSetting> AppSettings { get; }
 
+    // TOTP 2FA
+    DbSet<UserTotp> UserTotps { get; }
+    DbSet<RecoveryCode> RecoveryCodes { get; }
+    DbSet<LoginChallenge> LoginChallenges { get; }
+    DbSet<TrustedDevice> TrustedDevices { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

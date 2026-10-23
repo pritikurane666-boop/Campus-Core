@@ -123,3 +123,30 @@ This document formalizes all architectural, security, and infrastructure decisio
   - Subtle micro-durations: 120 ms to 250 ms with `ease-out`.
   - Full compliance with `@media (prefers-reduced-motion: reduce)`.
   - Zero layout shift (CLS = 0) and skeleton loaders mirroring actual content dimensions.
+
+---
+
+## 10. Multi-Factor Authentication (TOTP, RFC 6238)
+- **Standard & Parameters:**
+  - Standard: RFC 6238 TOTP (Time-based One-Time Password Algorithm).
+  - Algorithm: HMAC-SHA1.
+  - Digits: 6 decimal digits.
+  - Period / Time Step: 30 seconds.
+  - Drift Tolerance: ±1 step (allows 30s clock skew window).
+  - Secret Generation: 160-bit (20 bytes) CSPRNG via `RandomNumberGenerator.GetBytes(20)` Base32-encoded.
+  - Authenticator Compatibility: Fully compatible with Google Authenticator, Microsoft Authenticator, 1Password, Bitwarden.
+- **Client-Side QR Code Generation:**
+  - QR codes are **strictly rendered in the browser** via `qrcode.react` (SVG).
+  - Online QR generators (e.g. Google Charts API or third-party web services) are **strictly forbidden** to prevent secret leakage.
+- **Recovery Codes:**
+  - 10 alphanumeric backup codes (`xxxx-xxxx`), cryptographically random.
+  - Stored in the database exclusively as **SHA-256 hashes**; plain text is only shown once upon enrollment/regeneration.
+  - Marked single-use (`is_used = true`, `used_at = timestamp`) upon consumption.
+- **Role Enforcement & Challenge Flow:**
+  - Configurable via `Totp:RequiredRoles` (defaults to `["Principal"]`, configurable per role: `Principal`, `Teacher`, `Student`).
+  - When a user with a required role signs in without TOTP configured: backend returns `requiresTotpSetup: true` with a short-lived `challengeId` (5-minute expiry).
+  - When TOTP is configured: backend returns `requiresTotp: true` with `challengeId`.
+  - No access tokens or refresh tokens are issued until TOTP/recovery verification succeeds.
+- **Trusted Devices:**
+  - Users can optionally select "Trust this device for 30 days".
+  - Issues a 256-bit cryptographically secure random token stored as an HttpOnly, Secure, SameSite=Strict cookie, validated against a SHA-256 hash in `totp_trusted_devices`.

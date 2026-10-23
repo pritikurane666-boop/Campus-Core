@@ -1,6 +1,7 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,10 @@ using InstitutionErp.Infrastructure.Persistence;
 using InstitutionErp.Infrastructure.Seeding;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+// Break-glass CLI — exits before starting HTTP server if a CLI command is detected
+if (await InstitutionErp.Api.CliRunner.TryRunCliAsync(args))
+    return;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -146,6 +151,24 @@ builder.Services.AddOptions<DatabaseOptions>()
     }, "ConnectionStrings:DefaultConnection is required and cannot be a default/localhost connection in Production.")
     .ValidateOnStart();
 
+// TOTP 2FA Options
+builder.Services.AddOptions<TotpOptions>()
+    .Bind(builder.Configuration.GetSection(TotpOptions.SectionName))
+    .ValidateDataAnnotations()
+    .Validate(opt =>
+    {
+        if (!builder.Environment.IsProduction()) return true; // Dev: key optional
+        if (!opt.Enabled) return true; // Disabled globally: no key needed
+        if (string.IsNullOrWhiteSpace(opt.EncryptionKey)) return false;
+        try
+        {
+            var bytes = Convert.FromBase64String(opt.EncryptionKey);
+            return bytes.Length == 32; // Must be exactly 32 bytes for AES-256
+        }
+        catch { return false; }
+    }, "Auth:Totp:EncryptionKey is required in Production and must be a base64-encoded 32-byte key.")
+    .ValidateOnStart();
+
 // 3. Add Layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -223,6 +246,14 @@ builder.Services.AddRateLimiter(options =>
         opt.Window = TimeSpan.FromMinutes(1);
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 2;
+    });
+    // Separate stricter limit for 2FA endpoints
+    options.AddFixedWindowLimiter("totp-limit", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 1;
     });
 });
 
@@ -331,6 +362,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 // 12. Middleware Pipeline
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 

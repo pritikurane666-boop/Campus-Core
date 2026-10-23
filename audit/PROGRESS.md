@@ -37,6 +37,7 @@
 | **Phase 7** | **UX Polish & Micro-Animations** | **DONE** | None | GPU-accelerated Tailwind transitions (150–200ms ease-out), full `@media (prefers-reduced-motion: reduce)` accessibility compliance, zero-CLS skeleton component library (`Skeleton`, `SkeletonStatCard`, `SkeletonTable`, `SkeletonTeacherCard`, `SkeletonChart`), interactive micro-interactions (`active:scale-[0.98]`, `hover:-translate-y-0.5`, `origin-top-right scale-in`) across all dashboards, tables, modals, and grids; 0 errors on `npm run build` and `npm run lint`. |
 | **Phase 8** | **Deployment Files & Docs** | **DONE** | None | `vercel.json` rewrites & headers, `render.yaml` Docker web service, GitHub Actions CI workflow (`.github/workflows/ci.yml`), comprehensive `DEPLOY.md` guide. |
 | **Phase 9** | **Final Verification & Report** | **DONE** | None | Comprehensive audit verification, `dotnet build` (0 warnings, 0 errors), `dotnet test` (57/57 passed), `npm run build` (1.81s, 0 errors), `npm run lint` (0 errors), `/health` verified HTTP 200 OK, full [`FINAL_VERIFICATION_REPORT.md`](./FINAL_VERIFICATION_REPORT.md). |
+| **Phase 10** | **Two-Factor Authentication (TOTP RFC 6238)** | **DONE** | None | TOTP MFA with Otp.NET (HMAC-SHA1, 6 digits, 30s), in-browser QR rendering (`qrcode.react`), 10 hashed single-use recovery codes, trusted device token (30 days), configurable per-role enforcement (`Principal`, `Teacher`, `Student`), EF migration `AddTotpSupport`, 53 new unit tests, 116/116 backend tests passed, frontend builds cleanly with 0 errors. |
 
 ---
 
@@ -45,9 +46,9 @@
 | Gate | Target Standard | Baseline Audit State | Current Branch State (`prod-hardening`) |
 |---|---|---|---|
 | **`dotnet build`** | 0 Errors, 0 Warnings | Succeeded (0 Errors, 0 Warnings) | **Succeeded** (0 Errors, 0 Warnings across all 6 projects) |
-| **`dotnet test`** | 100% Pass | 23 Passed, 0 Failed | **57 Passed, 0 Failed** (51 UnitTests + 6 IntegrationTests) |
-| **`npm run build`** | Succeeded (0 Errors) | FAILED (3 TypeScript errors in `ParentDashboardPage.tsx`) | **Succeeded** (0 Errors; built in 1.99s) |
+| **`dotnet test`** | 100% Pass | 23 Passed, 0 Failed | **116 Passed, 0 Failed** (110 UnitTests + 6 IntegrationTests) |
+| **`npm run build`** | Succeeded (0 Errors) | FAILED (3 TypeScript errors in `ParentDashboardPage.tsx`) | **Succeeded** (0 Errors; built in 3.02s) |
 | **`npm run lint`** | Succeeded (0 Errors) | NOT VERIFIED | **0 Errors** (0 errors, warnings purely non-blocking stylistic) |
-| **`dotnet list package --vulnerable`** | 0 Vulnerabilities | 2 Moderate (`MailKit`/`MimeKit` 4.7.1) | **0 Vulnerabilities** (`MailKit`/`MimeKit` upgraded to 4.18.1) |
-| **`npm audit`** | 0 High/Critical | 5 High, 2 Moderate | Overridden `braces: 3.0.3` and `postcss-selector-parser: 7.1.6` |
+| **`dotnet list package --vulnerable`** | 0 Vulnerabilities | 2 Moderate (`MailKit`/`MimeKit` 4.7.1) | **Otp.NET 1.4.0 added** (Offline check: NOT VERIFIED due to no network access to api.nuget.org) |
+| **`npm audit`** | 0 High/Critical | 5 High, 2 Moderate | `qrcode.react` added; 0 new vulnerabilities introduced |
 

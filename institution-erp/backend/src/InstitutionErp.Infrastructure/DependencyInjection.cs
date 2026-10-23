@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using InstitutionErp.Application.Common.Interfaces;
 using InstitutionErp.Infrastructure.Audit;
 using InstitutionErp.Infrastructure.Auth;
+using InstitutionErp.Infrastructure.Background;
 using InstitutionErp.Infrastructure.Notifications;
 using InstitutionErp.Infrastructure.Payment;
 using InstitutionErp.Infrastructure.Pdf;
@@ -60,6 +61,7 @@ public static class DependencyInjection
         // Auth & Security
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<ITotpService, TotpService>();
 
         // Storage & PDF
         services.AddScoped<IFileStorage, FileStorageService>();
@@ -90,6 +92,9 @@ public static class DependencyInjection
 
         // Audit
         services.AddScoped<IAuditLogService, AuditLogService>();
+
+        // TOTP background maintenance
+        services.AddHostedService<TotpCleanupWorker>();
 
         // Seeder
         services.AddScoped<DatabaseSeeder>();

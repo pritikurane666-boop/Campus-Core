@@ -3,7 +3,7 @@ import * as T from '../types';
 
 export const authApi = {
   login: (data: { email: string; password: string }) =>
-    apiClient.post<T.AuthResponse>('/auth/login', data).then(r => r.data),
+    apiClient.post<T.AuthResponse | T.TotpChallengeResponse>('/auth/login', data).then(r => r.data),
   logout: () => apiClient.post('/auth/logout').then(r => r.data),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     apiClient.post<T.AuthResponse>('/auth/change-password', data).then(r => r.data),
@@ -14,6 +14,35 @@ export const authApi = {
   resetPassword: (data: { email: string; token: string; newPassword: string }) =>
     apiClient.post('/auth/reset-password', data).then(r => r.data),
   getMe: () => apiClient.get<T.User>('/auth/me').then(r => r.data),
+
+  // ─── TOTP 2FA ────────────────────────────────────────────────────────────
+  /** Request setup: returns { otpAuthUri, base32Key } */
+  totp2faSetup: (challengeId: string) =>
+    apiClient.post<T.TotpSetupResponse>('/auth/2fa/setup', { challengeId }).then(r => r.data),
+
+  /** Confirm enrollment: returns { recoveryCodes[], ...AuthResponse } */
+  totp2faConfirm: (challengeId: string, code: string) =>
+    apiClient.post<T.TotpConfirmResponse>('/auth/2fa/confirm', { challengeId, code }).then(r => r.data),
+
+  /** Verify TOTP code or recovery code: returns AuthResponse */
+  totp2faVerify: (challengeId: string, data: { code?: string; recoveryCode?: string; trustDevice?: boolean }) =>
+    apiClient.post<T.AuthResponse>('/auth/2fa/verify', { challengeId, ...data }).then(r => r.data),
+
+  /** 2FA status for current user */
+  totp2faStatus: () =>
+    apiClient.get<T.TwoFaStatus>('/auth/2fa/status').then(r => r.data),
+
+  /** Regenerate recovery codes (requires password + code) */
+  totp2faRegenerateCodes: (password: string, code: string) =>
+    apiClient.post<{ recoveryCodes: string[] }>('/auth/2fa/regenerate-codes', { password, code }).then(r => r.data),
+
+  /** Forget all trusted devices */
+  totp2faForgetDevices: () =>
+    apiClient.post<{ message: string }>('/auth/2fa/forget-devices').then(r => r.data),
+
+  /** Admin reset of another user's 2FA (Principal step-up) */
+  totp2faAdminReset: (targetUserId: string, principalCode: string) =>
+    apiClient.post<{ message: string }>('/auth/2fa/admin-reset', { targetUserId, principalCode }).then(r => r.data),
 };
 
 export const dashboardApi = {

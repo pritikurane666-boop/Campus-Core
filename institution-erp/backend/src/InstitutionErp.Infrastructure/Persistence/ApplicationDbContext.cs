@@ -49,6 +49,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
+    // TOTP 2FA
+    public DbSet<UserTotp> UserTotps => Set<UserTotp>();
+    public DbSet<RecoveryCode> RecoveryCodes => Set<RecoveryCode>();
+    public DbSet<LoginChallenge> LoginChallenges => Set<LoginChallenge>();
+    public DbSet<TrustedDevice> TrustedDevices => Set<TrustedDevice>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -256,6 +262,67 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             entity.HasIndex(al => new { al.EntityName, al.EntityId });
             entity.HasIndex(al => al.CreatedAt);
             entity.HasIndex(al => al.UserId);
+        });
+
+        // ── TOTP 2FA Tables ─────────────────────────────────────────────────
+        // These entities are NOT BaseEntity — they have no soft-delete, no CreatedBy.
+        // We explicitly exclude them from the global IsDeleted query filter.
+
+        modelBuilder.Entity<UserTotp>(entity =>
+        {
+            entity.ToTable("user_totp");
+            entity.HasKey(t => t.UserId);
+            entity.HasIndex(t => t.UserId).IsUnique();
+            entity.Property(t => t.EncryptedSecret).IsRequired();
+            entity.Property(t => t.Nonce).IsRequired();
+            entity.HasOne(t => t.User)
+                  .WithOne()
+                  .HasForeignKey<UserTotp>(t => t.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RecoveryCode>(entity =>
+        {
+            entity.ToTable("recovery_codes");
+            entity.HasKey(r => r.Id);
+            entity.HasIndex(r => r.UserId);
+            entity.HasIndex(r => r.CodeHash);
+            entity.Property(r => r.CodeHash).HasMaxLength(64).IsRequired();
+            entity.HasOne(r => r.User)
+                  .WithMany()
+                  .HasForeignKey(r => r.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<LoginChallenge>(entity =>
+        {
+            entity.ToTable("login_challenges");
+            entity.HasKey(c => c.Id);
+            entity.HasIndex(c => c.UserId);
+            entity.HasIndex(c => c.ExpiresAt);
+            entity.Property(c => c.Type)
+                  .HasConversion<int>();
+            entity.Property(c => c.IpAddress).HasMaxLength(64);
+            entity.Property(c => c.UserAgent).HasMaxLength(512);
+            entity.HasOne(c => c.User)
+                  .WithMany()
+                  .HasForeignKey(c => c.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<TrustedDevice>(entity =>
+        {
+            entity.ToTable("trusted_devices");
+            entity.HasKey(d => d.Id);
+            entity.HasIndex(d => d.UserId);
+            entity.HasIndex(d => d.TokenHash);
+            entity.HasIndex(d => d.ExpiresAt);
+            entity.Property(d => d.TokenHash).HasMaxLength(64).IsRequired();
+            entity.Property(d => d.UserAgentSummary).HasMaxLength(256);
+            entity.HasOne(d => d.User)
+                  .WithMany()
+                  .HasForeignKey(d => d.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

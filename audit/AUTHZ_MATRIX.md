@@ -223,3 +223,22 @@ Controller: `UsersController`
 | 118 | `PUT api/v1/users/{id}/status` | `[Authorize(Roles = "Principal,SuperAdmin,Admin")]` | 401 / 403 / 403 / 200 | Principal Only | 401 / 403 / 403 / 200 | Activate/deactivate accounts. Policy: `PrincipalOnly`. |
 | 119 | `PUT api/v1/users/{id}/reset-password` | `[Authorize(Roles = "Principal,SuperAdmin,Admin")]` | 401 / 403 / 403 / 200 | Principal Only | 401 / 403 / 403 / 200 | Returns one-time credential slip. Policy: `PrincipalOnly`. |
 | 120 | `PUT api/v1/users/{id}/roles` | `[Authorize(Roles = "Principal,SuperAdmin,Admin")]` | 401 / 403 / 403 / 200 | Principal Only | 401 / 403 / 403 / 200 | Assign roles from canonical set (`Principal`, `Teacher`, `Student`). |
+
+---
+
+### Module 11: Authentication & Two-Factor Authentication (`AuthController.cs`)
+Controller: `AuthController`
+
+| # | Method & Route | Current Auth Attribute | Current Behavior (Anon / Student / Teacher / Principal) | Intended Access | Expected Status (Anon / Student / Teacher / Principal) | Data Scoping & Hardening Rule |
+|---|---|---|---|---|---|---|
+| 121 | `POST api/v1/auth/login` | `[AllowAnonymous]` | 200 / 200 / 200 / 200 | Public / Anonymous | 200 / 200 / 200 / 200 | Rate limited. If user has TOTP or required role without TOTP, returns challengeId instead of tokens. |
+| 122 | `POST api/v1/auth/refresh` | `[AllowAnonymous]` | 200 / 200 / 200 / 200 | Public (with Cookie) | 200 / 200 / 200 / 200 | Token rotation and reuse detection. |
+| 123 | `POST api/v1/auth/logout` | `[Authorize]` | 401 / 200 / 200 / 200 | Authenticated User | 401 / 200 / 200 / 200 | Revokes refresh tokens and clears cookies. |
+| 124 | `GET api/v1/auth/me` | `[Authorize]` | 401 / 200 / 200 / 200 | Authenticated User | 401 / 200 / 200 / 200 | Returns current user profile, roles, and TOTP status. |
+| 125 | `POST api/v1/auth/change-password` | `[Authorize]` | 401 / 200 / 200 / 200 | Authenticated User | 401 / 200 / 200 / 200 | BCrypt cost 12+, revokes existing refresh tokens. |
+| 126 | `POST api/v1/auth/2fa/setup` | `[AllowAnonymous]` | 200 / 200 / 200 / 200 | Valid Challenge / Authenticated | 200 / 200 / 200 / 200 | Requires valid challengeId from login or authenticated session. Returns base32Key and otpauth URI. |
+| 127 | `POST api/v1/auth/2fa/confirm` | `[AllowAnonymous]` | 200 / 200 / 200 / 200 | Valid Challenge / Authenticated | 200 / 200 / 200 / 200 | Verifies 6-digit TOTP code, enables TOTP, returns 10 single-use recovery codes and auth tokens. |
+| 128 | `POST api/v1/auth/2fa/verify` | `[AllowAnonymous]` | 200 / 200 / 200 / 200 | Valid Challenge | 200 / 200 / 200 / 200 | Verifies TOTP code or recovery code against challenge. Issues trusted device cookie if requested. |
+| 129 | `POST api/v1/auth/2fa/recovery-codes` | `[Authorize]` | 401 / 200 / 200 / 200 | Authenticated User | 401 / 200 / 200 / 200 | Re-generates 10 backup codes; revokes old ones. |
+| 130 | `POST api/v1/auth/2fa/disable` | `[Authorize]` | 401 / 200 / 200 / 200 | Authenticated User | 401 / 200 / 200 / 200 | Requires current TOTP code or password to disable. |
+| 131 | `GET api/v1/auth/2fa/status` | `[Authorize]` | 401 / 200 / 200 / 200 | Authenticated User | 401 / 200 / 200 / 200 | Returns enabled status, enrollment timestamp, remaining recovery codes count. |

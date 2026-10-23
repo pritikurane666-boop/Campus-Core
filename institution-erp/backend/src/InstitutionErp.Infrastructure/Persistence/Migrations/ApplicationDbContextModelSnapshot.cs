@@ -1188,6 +1188,59 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                     b.ToTable("grade_scales", (string)null);
                 });
 
+            modelBuilder.Entity("InstitutionErp.Domain.Entities.LoginChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("user_agent");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_login_challenges");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_login_challenges_expires_at");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_login_challenges_user_id");
+
+                    b.ToTable("login_challenges", (string)null);
+                });
+
             modelBuilder.Entity("InstitutionErp.Domain.Entities.Notice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1409,6 +1462,43 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_notification_outboxes_status_next_retry_at_created_at");
 
                     b.ToTable("notification_outboxes", (string)null);
+                });
+
+            modelBuilder.Entity("InstitutionErp.Domain.Entities.RecoveryCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("used_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_recovery_codes");
+
+                    b.HasIndex("CodeHash")
+                        .HasDatabaseName("ix_recovery_codes_code_hash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_recovery_codes_user_id");
+
+                    b.ToTable("recovery_codes", (string)null);
                 });
 
             modelBuilder.Entity("InstitutionErp.Domain.Entities.RefreshToken", b =>
@@ -2020,6 +2110,55 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                     b.ToTable("timetable_entries", (string)null);
                 });
 
+            modelBuilder.Entity("InstitutionErp.Domain.Entities.TrustedDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<string>("UserAgentSummary")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("user_agent_summary");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_trusted_devices");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_trusted_devices_expires_at");
+
+                    b.HasIndex("TokenHash")
+                        .HasDatabaseName("ix_trusted_devices_token_hash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_trusted_devices_user_id");
+
+                    b.ToTable("trusted_devices", (string)null);
+                });
+
             modelBuilder.Entity("InstitutionErp.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2042,6 +2181,10 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
+
+                    b.Property<string>("DefaultPassword")
+                        .HasColumnType("text")
+                        .HasColumnName("default_password");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -2129,6 +2272,48 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_user_roles_role_id");
 
                     b.ToTable("user_roles", (string)null);
+                });
+
+            modelBuilder.Entity("InstitutionErp.Domain.Entities.UserTotp", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("confirmed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<byte[]>("EncryptedSecret")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("encrypted_secret");
+
+                    b.Property<int>("KeyVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("key_version");
+
+                    b.Property<long>("LastUsedStep")
+                        .HasColumnType("bigint")
+                        .HasColumnName("last_used_step");
+
+                    b.Property<byte[]>("Nonce")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("nonce");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_user_totp");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_totp_user_id");
+
+                    b.ToTable("user_totp", (string)null);
                 });
 
             modelBuilder.Entity("InstitutionErp.Domain.Entities.Admission", b =>
@@ -2357,6 +2542,18 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                     b.Navigation("FeeStructure");
                 });
 
+            modelBuilder.Entity("InstitutionErp.Domain.Entities.LoginChallenge", b =>
+                {
+                    b.HasOne("InstitutionErp.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_login_challenges_users_user_id");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("InstitutionErp.Domain.Entities.Notice", b =>
                 {
                     b.HasOne("InstitutionErp.Domain.Entities.ClassRoom", "TargetClassRoom")
@@ -2375,6 +2572,18 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_notifications_users_user_id");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("InstitutionErp.Domain.Entities.RecoveryCode", b =>
+                {
+                    b.HasOne("InstitutionErp.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_recovery_codes_users_user_id");
 
                     b.Navigation("User");
                 });
@@ -2522,6 +2731,18 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                     b.Navigation("Teacher");
                 });
 
+            modelBuilder.Entity("InstitutionErp.Domain.Entities.TrustedDevice", b =>
+                {
+                    b.HasOne("InstitutionErp.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_trusted_devices_users_user_id");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("InstitutionErp.Domain.Entities.UserRole", b =>
                 {
                     b.HasOne("InstitutionErp.Domain.Entities.Role", "Role")
@@ -2534,10 +2755,21 @@ namespace InstitutionErp.Infrastructure.Persistence.Migrations
                         .WithMany("UserRoles")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_user_roles_users_user_id");
 
                     b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("InstitutionErp.Domain.Entities.UserTotp", b =>
+                {
+                    b.HasOne("InstitutionErp.Domain.Entities.User", "User")
+                        .WithOne()
+                        .HasForeignKey("InstitutionErp.Domain.Entities.UserTotp", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_totp_users_user_id");
 
                     b.Navigation("User");
                 });
