@@ -232,13 +232,18 @@ builder.Services.AddAuthorization(options =>
 
 // 7. CORS
 var corsOptions = builder.Configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>() ?? new CorsOptions();
+var parsedOrigins = (corsOptions.AllowedOrigins ?? Array.Empty<string>())
+    .SelectMany(o => o.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        if (corsOptions.AllowedOrigins != null && corsOptions.AllowedOrigins.Length > 0)
+        if (parsedOrigins.Length > 0)
         {
-            policy.WithOrigins(corsOptions.AllowedOrigins)
+            policy.WithOrigins(parsedOrigins)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();

@@ -97,6 +97,22 @@ export const RecoveryCodesPage: React.FC = () => {
   const handleContinue = () => {
     if (authResponse) {
       setAuthFromResponse(authResponse);
+    } else {
+      const storedToken = localStorage.getItem('erp_access_token');
+      const storedUser = localStorage.getItem('erp_user');
+      if (storedToken && storedUser) {
+        try {
+          const u = JSON.parse(storedUser);
+          setAuthFromResponse({
+            accessToken: storedToken,
+            refreshToken: localStorage.getItem('erp_refresh_token') || '',
+            expiresAt: '',
+            user: u,
+          });
+        } catch {
+          // Ignore
+        }
+      }
     }
     try {
       sessionStorage.removeItem('temp_recovery_codes');

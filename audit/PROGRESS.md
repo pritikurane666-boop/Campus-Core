@@ -46,8 +46,8 @@
 | Gate | Target Standard | Baseline Audit State | Current Branch State (`prod-hardening`) |
 |---|---|---|---|
 | **`dotnet build`** | 0 Errors, 0 Warnings | Succeeded (0 Errors, 0 Warnings) | **Succeeded** (0 Errors, 0 Warnings across all 6 projects) |
-| **`dotnet test`** | 100% Pass | 23 Passed, 0 Failed | **116 Passed, 0 Failed** (110 UnitTests + 6 IntegrationTests) |
-| **`npm run build`** | Succeeded (0 Errors) | FAILED (3 TypeScript errors in `ParentDashboardPage.tsx`) | **Succeeded** (0 Errors; built in 3.02s) |
+| **`dotnet test`** | 100% Pass | 23 Passed, 0 Failed | **117 Passed, 0 Failed** (110 UnitTests + 7 IntegrationTests) |
+| **`npm run build`** | Succeeded (0 Errors) | FAILED (3 TypeScript errors in `ParentDashboardPage.tsx`) | **Succeeded** (0 Errors; built in 7.53s) |
 | **`npm run lint`** | Succeeded (0 Errors) | NOT VERIFIED | **0 Errors** (0 errors, warnings purely non-blocking stylistic) |
 | **`dotnet list package --vulnerable`** | 0 Vulnerabilities | 2 Moderate (`MailKit`/`MimeKit` 4.7.1) | **Otp.NET 1.4.0 added** (Offline check: NOT VERIFIED due to no network access to api.nuget.org) |
 | **`npm audit`** | 0 High/Critical | 5 High, 2 Moderate | `qrcode.react` added; 0 new vulnerabilities introduced |

@@ -143,7 +143,7 @@ Admissions documents and institutional file uploads are stored in an encrypted p
    - **Auto-Deploy:** Yes
 4. Add all environment variables listed in Section 2.
 5. Deploy service. Verify health check at:
-   `https://campuscore-api-jknx.onrender.com/health` (should return HTTP 200 `Healthy`).
+   `https://campus-core-nwlt.onrender.com/health` (should return HTTP 200 `Healthy`).
 
 ---
 
@@ -162,7 +162,7 @@ The frontend is deployed to Vercel with automatic reverse-proxy rewrites configu
    ```json
    {
      "source": "/api/(.*)",
-     "destination": "https://campuscore-api-jknx.onrender.com/api/$1"
+     "destination": "https://campus-core-nwlt.onrender.com/api/$1"
    }
    ```
 5. Deploy. Vercel will build the frontend in ~2 seconds and issue an SSL certificate.
@@ -175,7 +175,7 @@ Once both services are active:
 
 1. **Verify Backend Health:**
    ```bash
-   curl -i https://campuscore-api-jknx.onrender.com/health
+   curl -i https://campus-core-nwlt.onrender.com/health
    # Response: HTTP 200 OK (Healthy)
    ```
 

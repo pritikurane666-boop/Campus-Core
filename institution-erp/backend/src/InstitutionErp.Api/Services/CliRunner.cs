@@ -27,6 +27,13 @@ public static class CliRunner
     public static async Task<bool> TryRunCliAsync(string[] args)
     {
         if (args.Length == 0) return false;
+
+        if (args[0] == "inspect-auth")
+        {
+            await RunInspectAuthAsync(args);
+            return true;
+        }
+
         if (args[0] != "reset-2fa") return false;
 
         var email = GetArgValue(args, "--email");
@@ -108,6 +115,61 @@ public static class CliRunner
         Console.WriteLine("[CLI] The user will be required to re-enroll 2FA at their next login.");
         Console.WriteLine("[CLI] All refresh tokens and trusted devices have been revoked.");
         return true;
+    }
+
+    private static async Task RunInspectAuthAsync(string[] args)
+    {
+        var targetEmail = GetArgValue(args, "--email");
+
+        var host = Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration(config =>
+            {
+                config.AddEnvironmentVariables();
+                config.AddJsonFile("appsettings.json", optional: true);
+                config.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true);
+            })
+            .ConfigureServices((ctx, services) =>
+            {
+                services.AddInfrastructure(ctx.Configuration);
+            })
+            .Build();
+
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var query = db.Users
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(targetEmail))
+        {
+            query = query.Where(u => u.Email.ToLower() == targetEmail.ToLower());
+        }
+
+        var users = await query.Take(20).ToListAsync();
+        Console.WriteLine($"[INSPECT-AUTH] Found {users.Count} user(s):");
+
+        foreach (var u in users)
+        {
+            var roles = string.Join(", ", u.UserRoles.Select(r => r.Role.Name));
+            var totp = await db.UserTotps.AsNoTracking().FirstOrDefaultAsync(t => t.UserId == u.Id);
+            var recoveryCount = await db.RecoveryCodes.CountAsync(r => r.UserId == u.Id && r.UsedAt == null);
+            var challengeCount = await db.LoginChallenges.CountAsync(c => c.UserId == u.Id && c.ConsumedAt == null && c.ExpiresAt > DateTime.UtcNow);
+
+            Console.WriteLine($"--------------------------------------------------");
+            Console.WriteLine($"User ID:        {u.Id}");
+            Console.WriteLine($"Email:          {u.Email}");
+            Console.WriteLine($"Name:           {u.FullName}");
+            Console.WriteLine($"Roles:          {roles}");
+            Console.WriteLine($"IsActive:       {u.IsActive}, IsDeleted: {u.IsDeleted}");
+            Console.WriteLine($"LockoutEnd:     {u.LockoutEnd}");
+            Console.WriteLine($"FailedAttempts: {u.AccessFailedCount}");
+            Console.WriteLine($"DefaultPassword: {u.DefaultPassword}");
+            Console.WriteLine($"TOTP Enrolled:  {(totp != null ? (totp.ConfirmedAt.HasValue ? $"Confirmed at {totp.ConfirmedAt}" : "PENDING (not confirmed)") : "No record")}");
+            Console.WriteLine($"Active Recovery Codes: {recoveryCount}");
+            Console.WriteLine($"Active Login Challenges: {challengeCount}");
+        }
+        Console.WriteLine($"--------------------------------------------------");
     }
 
     private static string? GetArgValue(string[] args, string key)
