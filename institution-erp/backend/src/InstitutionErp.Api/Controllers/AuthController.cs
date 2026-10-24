@@ -167,8 +167,9 @@ public class AuthController : ControllerBase
 
         var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
 
-        // 3. Admin / Principal bypass: Administrator accounts bypass 2FA / Email OTP completely
+        // 3. Admin / HOD / Principal bypass: Administrator accounts bypass 2FA / Email OTP completely
         var isPrincipalOrAdmin = roles.Contains("Principal", StringComparer.OrdinalIgnoreCase) ||
+                                 roles.Contains("HOD", StringComparer.OrdinalIgnoreCase) ||
                                  string.Equals(user.Email, _adminOptions.Email, StringComparison.OrdinalIgnoreCase);
 
         // Non-admin roles (Teacher, Student) undergo Email OTP verification
@@ -227,12 +228,12 @@ public class AuthController : ControllerBase
         if (user == null || !user.IsActive || user.IsDeleted)
             return Unauthorized(new { message = "Invalid administrator credentials." });
 
-        // Ensure user is an administrator (Principal role)
+        // Ensure user is an administrator (HOD or Principal role)
         var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
-        if (!roles.Contains("Principal", StringComparer.OrdinalIgnoreCase))
+        if (!roles.Contains("Principal", StringComparer.OrdinalIgnoreCase) && !roles.Contains("HOD", StringComparer.OrdinalIgnoreCase))
         {
             return StatusCode(StatusCodes.Status403Forbidden,
-                new { message = "Direct bypass login is restricted to administrators (Principal)." });
+                new { message = "Direct bypass login is restricted to administrators (HOD)." });
         }
 
         // Lockout check
