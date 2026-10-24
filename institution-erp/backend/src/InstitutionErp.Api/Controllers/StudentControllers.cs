@@ -73,7 +73,7 @@ public class StudentsController : ControllerBase
                                      x.RollNumber.ToLower().Contains(s));
         }
 
-        var isAdmin = User.IsInRole("Principal");
+        var isAdmin = User.IsInRole("HOD");
 
         // Teacher restriction: Teachers can only view students enrolled in their allocated classes
         if (!isAdmin)
@@ -216,7 +216,7 @@ public class StudentsController : ControllerBase
 
         if (s == null) return NotFound();
 
-        var isAdmin = User.IsInRole("Principal");
+        var isAdmin = User.IsInRole("HOD");
 
         if (!isAdmin)
         {
@@ -275,7 +275,7 @@ public class StudentsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<StudentDto>> Create([FromBody] CreateStudentRequest request)
     {
         if (await _db.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
@@ -447,7 +447,7 @@ public class StudentsController : ControllerBase
     }
 
     [HttpPost("{id}/reset-password")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> ResetPassword(Guid id, [FromBody] ResetStudentPasswordRequest? request = null)
     {
         var student = await _db.Students
@@ -532,7 +532,7 @@ public class StudentsController : ControllerBase
 
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateStudentRequest request)
     {
         var student = await _db.Students.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == id);
@@ -572,7 +572,7 @@ public class StudentsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var student = await _db.Students.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == id);
@@ -592,7 +592,7 @@ public class StudentsController : ControllerBase
     }
 
     [HttpGet("export")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> ExportToCsv([FromQuery] Guid? classId)
     {
         var query = _db.Students

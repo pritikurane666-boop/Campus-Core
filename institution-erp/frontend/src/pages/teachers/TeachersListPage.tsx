@@ -10,7 +10,7 @@ import { useAuth } from '../../store/authContext';
 
 export const TeachersListPage: React.FC = () => {
   const { hasRole } = useAuth();
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'directory' | 'attendance'>('directory');
   const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
@@ -320,7 +320,7 @@ export const TeachersListPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Password (Visible to Principal) */}
+                  {/* Password (Visible to HOD) */}
                   {t.generatedPassword && (
                     <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-1.5 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-1.5 min-w-0">

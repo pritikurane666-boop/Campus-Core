@@ -32,7 +32,7 @@ import { Exam, StudentExamResult } from '../../types';
 export const ExamsListPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { user, hasRole } = useAuth();
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
   const isTeacher = hasRole('Teacher');
   const isStudent = hasRole('Student');
 

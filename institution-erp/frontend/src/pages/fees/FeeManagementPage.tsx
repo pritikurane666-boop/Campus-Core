@@ -24,7 +24,7 @@ import {
 export const FeeManagementPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
 
   const [activeTab, setActiveTab] = useState<'collection' | 'structures'>('collection');
 

@@ -85,7 +85,7 @@ export const TEACHING_PERIODS = [1, 2, 3, 4, 5, 6];
 export const TimetablePage: React.FC = () => {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
   const isTeacher = hasRole('Teacher');
   const isStudent = hasRole('Student');
 

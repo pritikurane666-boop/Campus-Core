@@ -11,7 +11,7 @@ import { useAuth } from '../../store/authContext';
 
 export const StudentsListPage: React.FC = () => {
   const { hasRole } = useAuth();
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
   const isTeacher = hasRole('Teacher');
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -538,7 +538,7 @@ export const StudentsListPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Login Credentials (Visible to Principal) */}
+            {/* Login Credentials (Visible to HOD) */}
             {isAdmin && (
               <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
                 <div className="flex items-center justify-between">
@@ -549,7 +549,7 @@ export const StudentsListPage: React.FC = () => {
                     </h4>
                   </div>
                   <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-100/80 px-2 py-0.5 rounded-full">
-                    Principal View
+                    HOD View
                   </span>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-3 text-xs">

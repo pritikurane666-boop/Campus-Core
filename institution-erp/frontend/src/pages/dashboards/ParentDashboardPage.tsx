@@ -64,9 +64,9 @@ export const ParentDashboardPage: React.FC = () => {
 
   const isStudent = hasRole('Student');
   const isStudentOrParent = isStudent;
-  const isPrincipal = hasRole('Principal');
+  const isHod = hasRole('HOD');
   const isTeacher = hasRole('Teacher');
-  const isStaffOrAdmin = isPrincipal || isTeacher;
+  const isStaffOrAdmin = isHod || isTeacher;
 
   // Admin filter states for student directory selector
   const [searchQuery, setSearchQuery] = useState('');
@@ -385,10 +385,10 @@ export const ParentDashboardPage: React.FC = () => {
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Users className="h-5 w-5 text-indigo-600" />
-                  <span>{isTeacher && !isPrincipal ? 'Class Students Portal' : 'Institutional Student Directory'}</span>
+                  <span>{isTeacher && !isHod ? 'Class Students Portal' : 'Institutional Student Directory'}</span>
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {isTeacher && !isPrincipal
+                  {isTeacher && !isHod
                     ? 'Select any enrolled student from your allocated class cohorts to inspect their academic portal records'
                     : 'Select any enrolled student to preview their personal reports, attendance, fees, and academic performance'}
                 </p>
@@ -1895,7 +1895,7 @@ export const ParentDashboardPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="h-10 border-b border-dashed border-slate-400" />
-                  <p className="mt-2 font-bold text-slate-800">Principal / Director</p>
+                  <p className="mt-2 font-bold text-slate-800">HOD / Director</p>
                   <p className="text-[10px] text-slate-400">Official Stamp</p>
                 </div>
               </div>

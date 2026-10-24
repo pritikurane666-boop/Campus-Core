@@ -181,7 +181,7 @@ public class AdmissionsController : ControllerBase
     }
 
     [HttpGet("{id}/documents/{documentId}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> DownloadDocument(Guid id, Guid documentId)
     {
         var doc = await _db.AdmissionDocuments.FirstOrDefaultAsync(d => d.Id == documentId && d.AdmissionId == id);
@@ -199,7 +199,7 @@ public class AdmissionsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<PagedResult<AdmissionDto>>> GetAdmissions(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -278,7 +278,7 @@ public class AdmissionsController : ControllerBase
     }
 
     [HttpGet("documents/{id}/download")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> DownloadDocument(Guid id)
     {
         var doc = await _db.AdmissionDocuments.FindAsync(id);
@@ -289,7 +289,7 @@ public class AdmissionsController : ControllerBase
     }
 
     [HttpGet("export")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> ExportToCsv([FromQuery] AdmissionStatus? status, [FromQuery] Guid? classId)
     {
         var query = _db.Admissions
@@ -313,7 +313,7 @@ public class AdmissionsController : ControllerBase
     }
 
     [HttpPut("{id}/status")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateAdmissionStatusRequest request)
     {
         var strategy = _db.Database.CreateExecutionStrategy();
@@ -333,7 +333,7 @@ public class AdmissionsController : ControllerBase
             admission.Status = request.NewStatus;
             admission.ReviewRemarks = request.Remarks;
             admission.ReviewedAt = DateTime.UtcNow;
-            admission.ReviewedBy = _currentUserService.Email ?? "Principal";
+            admission.ReviewedBy = _currentUserService.Email ?? "HOD";
 
             _db.AdmissionStatusHistories.Add(new AdmissionStatusHistory
             {
@@ -697,7 +697,7 @@ public class AdmissionsController : ControllerBase
 
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> DeleteAdmission(Guid id)
     {
         var admission = await _db.Admissions

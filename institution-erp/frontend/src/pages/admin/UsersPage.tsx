@@ -6,7 +6,7 @@ import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
 import { Shield, Plus, Search, CheckCircle, XCircle, Key, UserCheck, ShieldAlert, Filter, RefreshCw } from 'lucide-react';
 
-const ALL_ROLES = ['Principal', 'Teacher', 'Student'];
+const ALL_ROLES = ['HOD', 'Teacher'];
 
 export const UsersPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -127,12 +127,10 @@ export const UsersPage: React.FC = () => {
             <span
               key={r}
               className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                r === 'Principal'
+                r === 'HOD'
                   ? 'bg-purple-100 text-purple-800'
                   : r === 'Teacher'
                   ? 'bg-blue-100 text-blue-800'
-                  : r === 'Student'
-                  ? 'bg-emerald-100 text-emerald-800'
                   : 'bg-slate-100 text-slate-700'
               }`}
             >
@@ -192,7 +190,7 @@ export const UsersPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">User Identity & Access Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Staff & Roles Management</h1>
           <p className="text-sm text-slate-500">
             Enterprise RBAC governance, administrative credentials, role delegation and security locks
           </p>
@@ -210,7 +208,7 @@ export const UsersPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
           >
             <Plus className="h-4 w-4" />
-            Create System User
+            Create Staff User
           </button>
         </div>
       </div>
@@ -221,7 +219,7 @@ export const UsersPage: React.FC = () => {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by user full name or email address..."
+            placeholder="Search by staff full name or email address..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -243,11 +241,8 @@ export const UsersPage: React.FC = () => {
             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 focus:border-indigo-500 focus:outline-none"
           >
             <option value="">All Roles</option>
-            {ALL_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
+            <option value="HOD">HOD (Head of Department)</option>
+            <option value="Teacher">Teacher</option>
           </select>
         </div>
       </div>
@@ -312,8 +307,7 @@ export const UsersPage: React.FC = () => {
                 className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-indigo-500 focus:outline-none"
               >
                 <option value="Teacher">Teacher</option>
-                <option value="Student">Student</option>
-                <option value="Principal">Principal</option>
+                <option value="HOD">HOD (Head of Department)</option>
               </select>
             </div>
             <div>
@@ -382,7 +376,7 @@ export const UsersPage: React.FC = () => {
                         : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    <span>{r}</span>
+                    <span>{r === 'HOD' ? 'HOD (Head of Department)' : r}</span>
                     {isSelected && <CheckCircle className="h-4 w-4 text-indigo-600" />}
                   </button>
                 );

@@ -35,7 +35,7 @@ public class NoticesController : ControllerBase
             .Where(n => n.ExpiryDate == null || n.ExpiryDate >= DateTime.UtcNow)
             .AsNoTracking();
 
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        var isAdmin = _currentUserService.IsInRole("HOD");
 
         if (!isAdmin)
         {
@@ -91,10 +91,10 @@ public class NoticesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal,Teacher")]
+    [Authorize(Roles = "HOD,Teacher")]
     public async Task<ActionResult<NoticeDto>> Create([FromBody] CreateNoticeRequest request)
     {
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        var isAdmin = _currentUserService.IsInRole("HOD");
         var isTeacher = _currentUserService.IsInRole("Teacher") && !isAdmin;
 
         var resolvedAudience = isTeacher ? NoticeAudience.SpecificClass : request.Audience;
@@ -144,13 +144,13 @@ public class NoticesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal,Teacher")]
+    [Authorize(Roles = "HOD,Teacher")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var notice = await _db.Notices.FindAsync(id);
         if (notice == null) return NotFound();
 
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        var isAdmin = _currentUserService.IsInRole("HOD");
         var isTeacher = _currentUserService.IsInRole("Teacher") && !isAdmin;
 
         if (isTeacher && notice.PostedBy != _currentUserService.Email)
@@ -272,7 +272,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("admin")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<AdminDashboardDto>> GetAdminDashboard()
     {
         const string cacheKey = "admin_dashboard_cache";
@@ -430,7 +430,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("accountant")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<AccountantDashboardDto>> GetAccountantDashboard()
     {
         const string cacheKey = "accountant_dashboard_cache";
@@ -520,7 +520,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("teacher")]
-    [Authorize(Roles = "Principal,Teacher")]
+    [Authorize(Roles = "HOD,Teacher")]
     public async Task<ActionResult<TeacherDashboardDto>> GetTeacherDashboard()
     {
         var teacher = await _db.Teachers
@@ -627,7 +627,7 @@ public class DashboardController : ControllerBase
 
     [HttpGet("student")]
     [HttpGet("parent")]
-    [Authorize(Roles = "Principal,Teacher,Student")]
+    [Authorize(Roles = "HOD,Teacher,Student")]
     public async Task<ActionResult<ParentStudentDashboardDto>> GetStudentDashboard([FromQuery] Guid? studentId)
     {
         Student? student = null;
@@ -645,7 +645,7 @@ public class DashboardController : ControllerBase
             }
 
             // Teacher check: teacher can only inspect students enrolled in their allocated classes
-            if (_currentUserService.IsInRole("Teacher") && !_currentUserService.IsInRole("Principal"))
+            if (_currentUserService.IsInRole("Teacher") && !_currentUserService.IsInRole("HOD"))
             {
                 var teacher = await _db.Teachers
                     .Include(t => t.Allocations)
@@ -696,7 +696,7 @@ public class DashboardController : ControllerBase
                 .Include(s => s.ClassRoom)
                 .Where(s => s.Status == StudentStatus.Active);
 
-            if (_currentUserService.IsInRole("Teacher") && !_currentUserService.IsInRole("Principal"))
+            if (_currentUserService.IsInRole("Teacher") && !_currentUserService.IsInRole("HOD"))
             {
                 var teacher = await _db.Teachers
                     .Include(t => t.Allocations)
@@ -807,7 +807,7 @@ public class DashboardController : ControllerBase
 
 [ApiController]
 [Route("api/v1/audit-logs")]
-[Authorize(Roles = "Principal")]
+[Authorize(Roles = "HOD")]
 public class AuditLogsController : ControllerBase
 {
     private readonly ApplicationDbContext _db;

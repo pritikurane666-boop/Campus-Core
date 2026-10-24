@@ -33,7 +33,7 @@ export const ClassesPage: React.FC = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { hasRole, user } = useAuth();
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
   const isTeacher = hasRole('Teacher') && !isAdmin;
 
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);

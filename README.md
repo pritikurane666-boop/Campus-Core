@@ -19,7 +19,7 @@ A web-based ERP for managing a college or school: admissions, students, teachers
 
 | Role | Purpose |
 |---|---|
-| Principal | Administers the institution: users, classes, fees, exams, admissions |
+| HOD | Administers the institution: users, classes, fees, exams, admissions |
 | Teacher | Marks attendance, enters marks for allocated classes and subjects, posts notices |
 | Student | Views own timetable, attendance, results, fees, and notices |
 
