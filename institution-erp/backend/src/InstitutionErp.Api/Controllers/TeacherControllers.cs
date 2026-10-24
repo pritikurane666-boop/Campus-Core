@@ -742,18 +742,6 @@ public class TimetableController : ControllerBase
             return BadRequest(new { message = "Selected subject is not allocated to this classroom." });
         }
 
-        // Clash detection 1: Class double-booked for the same day and period
-        if (await _db.TimetableEntries.AnyAsync(t => t.ClassRoomId == request.ClassRoomId && t.DayOfWeek == request.DayOfWeek && t.PeriodNumber == request.PeriodNumber))
-        {
-            return BadRequest(new { message = $"Class already has a period assigned at Day {request.DayOfWeek}, Period #{request.PeriodNumber}." });
-        }
-
-        // Clash detection 2: Teacher double-booked for the same day and period
-        if (await _db.TimetableEntries.AnyAsync(t => t.TeacherId == request.TeacherId && t.DayOfWeek == request.DayOfWeek && t.PeriodNumber == request.PeriodNumber))
-        {
-            return BadRequest(new { message = $"Teacher is already assigned to another class at Day {request.DayOfWeek}, Period #{request.PeriodNumber}." });
-        }
-
         TimeSpan.TryParse(request.StartTime, out var start);
         TimeSpan.TryParse(request.EndTime, out var end);
 
@@ -780,6 +768,31 @@ public class TimetableController : ControllerBase
         {
             start = standardTimes.Start;
             end = standardTimes.End;
+        }
+
+        // Clash detection 1: Class already scheduled for this period or overlapping time on that day
+        var classClash = await _db.TimetableEntries
+            .Include(t => t.Subject)
+            .FirstOrDefaultAsync(t => t.ClassRoomId == request.ClassRoomId 
+                && t.DayOfWeek == request.DayOfWeek 
+                && (t.PeriodNumber == request.PeriodNumber || (start < t.EndTime && end > t.StartTime)));
+
+        if (classClash != null)
+        {
+            return BadRequest(new { message = $"This class already has a scheduled subject ({classClash.Subject?.Name ?? "Subject"}) in period {classClash.PeriodNumber} at that time." });
+        }
+
+        // Clash detection 2: Teacher already scheduled for another class in the same period or overlapping time
+        var teacherClash = await _db.TimetableEntries
+            .Include(t => t.ClassRoom)
+            .FirstOrDefaultAsync(t => t.TeacherId == request.TeacherId 
+                && t.DayOfWeek == request.DayOfWeek 
+                && (t.PeriodNumber == request.PeriodNumber || (start < t.EndTime && end > t.StartTime)));
+
+        if (teacherClash != null)
+        {
+            var clashingClassName = teacherClash.ClassRoom?.FullName ?? "another class";
+            return BadRequest(new { message = $"This teacher is already teaching {clashingClassName} in period {teacherClash.PeriodNumber} at that time." });
         }
 
         var entry = new TimetableEntry

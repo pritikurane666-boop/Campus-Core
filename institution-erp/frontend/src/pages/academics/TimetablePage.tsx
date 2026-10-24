@@ -7,6 +7,7 @@ import Modal from '../../components/ui/Modal';
 import { Skeleton } from '../../components/common/Skeleton';
 import { Calendar, Plus, Trash2, Clock, MapPin, User, BookOpen, Lock, Unlock, ShieldAlert, CheckCircle2, AlertTriangle, Layers, UserCheck, Award, Bell, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../store/authContext';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -188,7 +189,7 @@ export const TimetablePage: React.FC = () => {
       alert(res?.message || 'Timetable has been officially fixed and locked for this academic year!');
     },
     onError: (err: any) => {
-      alert(`Failed to fix timetable: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -200,7 +201,7 @@ export const TimetablePage: React.FC = () => {
       alert(res?.message || 'Timetable unlocked for adjustments.');
     },
     onError: (err: any) => {
-      alert(`Failed to unlock timetable: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -241,7 +242,7 @@ export const TimetablePage: React.FC = () => {
       alert('Timetable period scheduled successfully!');
     },
     onError: (err: any) => {
-      alert(`Clash / Scheduling Error: ${err.response?.data?.message || err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -253,7 +254,7 @@ export const TimetablePage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['teacher-dashboard'] });
     },
     onError: (err: any) => {
-      alert(`Failed to delete period: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
