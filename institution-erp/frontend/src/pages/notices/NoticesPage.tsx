@@ -7,6 +7,7 @@ import Modal from '../../components/ui/Modal';
 import { Skeleton } from '../../components/common/Skeleton';
 import { Bell, Pin, Plus, Trash2, Calendar, Users, Filter, BookOpen, Award, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../store/authContext';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export const NoticesPage: React.FC = () => {
   const { user, hasRole } = useAuth();
@@ -54,7 +55,7 @@ export const NoticesPage: React.FC = () => {
       alert('Notice published successfully!');
     },
     onError: (err: any) => {
-      alert(`Failed to publish notice: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -64,7 +65,7 @@ export const NoticesPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['notices-list'] });
     },
     onError: (err: any) => {
-      alert(`Failed to delete notice: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 

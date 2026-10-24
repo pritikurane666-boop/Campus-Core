@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../store/authContext';
 import { Lock, Mail, GraduationCap, AlertCircle } from 'lucide-react';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -21,17 +22,7 @@ export const LoginPage: React.FC = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      let msg = 'Invalid email or password.';
-      if (!err.response) {
-        msg = 'Unable to connect to backend API. Please ensure the backend on Render is deployed and online.';
-      } else if (err.response.status === 502 || err.response.status === 503 || err.response.status === 504) {
-        msg = `Backend server is unavailable or waking up (HTTP ${err.response.status} Bad Gateway). Please check Render deployment logs.`;
-      } else if (err.response.status === 401) {
-        msg = err.response?.data?.message || 'Invalid email or password.';
-      } else {
-        msg = err.response?.data?.message || err.response?.data?.detail || `Server error (${err.response.status}).`;
-      }
-      setError(msg);
+      setError(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }

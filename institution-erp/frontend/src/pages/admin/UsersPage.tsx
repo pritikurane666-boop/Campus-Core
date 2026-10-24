@@ -5,6 +5,7 @@ import { User } from '../../types';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
 import { Shield, Plus, Search, CheckCircle, XCircle, Key, UserCheck, ShieldAlert, Filter, RefreshCw } from 'lucide-react';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 const ALL_ROLES = ['HOD', 'Teacher'];
 
@@ -47,7 +48,7 @@ export const UsersPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['users-list'] });
     },
     onError: (err: any) => {
-      alert(`Status update failed: ${err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -63,7 +64,7 @@ export const UsersPage: React.FC = () => {
       alert('System user account created successfully!');
     },
     onError: (err: any) => {
-      alert(`Failed to create user: ${err.response?.data?.message || err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -75,7 +76,7 @@ export const UsersPage: React.FC = () => {
       alert('User password has been reset successfully!');
     },
     onError: (err: any) => {
-      alert(`Password reset failed: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -88,7 +89,7 @@ export const UsersPage: React.FC = () => {
       alert('User roles updated successfully!');
     },
     onError: (err: any) => {
-      alert(`Failed to update roles: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 

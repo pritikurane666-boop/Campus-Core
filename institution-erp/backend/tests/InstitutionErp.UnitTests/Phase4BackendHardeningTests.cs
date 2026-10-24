@@ -186,7 +186,7 @@ public class Phase4BackendHardeningTests
 
         json.Should().NotContain("secret_pass");
         json.Should().NotContain("Sensitive internal database");
-        json.Should().Contain("An unexpected internal server error occurred. Please contact system support.");
+        json.Should().Contain("Something went wrong on our end. Please try again in a moment. If the problem continues, contact support.");
         json.Should().Contain("traceId");
     }
 

@@ -40,35 +40,85 @@ public class ExceptionHandlingMiddleware
     {
         context.Response.ContentType = "application/problem+json";
 
-        var (statusCode, title, typeUri) = exception switch
+        int statusCode;
+        string title;
+        string typeUri;
+        string detail;
+
+        if (exception is UnauthorizedAccessException)
         {
-            UnauthorizedAccessException => (
-                (int)HttpStatusCode.Unauthorized, 
-                "Unauthorized", 
-                "https://tools.ietf.org/html/rfc7235#section-3.1"),
-            KeyNotFoundException => (
-                (int)HttpStatusCode.NotFound, 
-                "Resource Not Found", 
-                "https://tools.ietf.org/html/rfc7231#section-6.5.4"),
-            InvalidOperationException => (
-                (int)HttpStatusCode.BadRequest, 
-                "Bad Request", 
-                "https://tools.ietf.org/html/rfc7231#section-6.5.1"),
-            FluentValidation.ValidationException => (
-                (int)HttpStatusCode.BadRequest, 
-                "Validation Error", 
-                "https://tools.ietf.org/html/rfc7231#section-6.5.1"),
-            _ => (
-                (int)HttpStatusCode.InternalServerError, 
-                "Internal Server Error", 
-                "https://tools.ietf.org/html/rfc7231#section-6.6.1")
-        };
+            statusCode = (int)HttpStatusCode.Forbidden;
+            title = "Forbidden";
+            typeUri = "https://tools.ietf.org/html/rfc7231#section-6.5.3";
+            detail = "You do not have permission to perform this action.";
+        }
+        else if (exception is KeyNotFoundException)
+        {
+            statusCode = (int)HttpStatusCode.NotFound;
+            title = "Not Found";
+            typeUri = "https://tools.ietf.org/html/rfc7231#section-6.5.4";
+            detail = "The requested record was not found.";
+        }
+        else if (exception is FluentValidation.ValidationException)
+        {
+            statusCode = (int)HttpStatusCode.BadRequest;
+            title = "Validation Error";
+            typeUri = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+            detail = "One or more validation errors occurred.";
+        }
+        else if (exception is Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            statusCode = (int)HttpStatusCode.Conflict;
+            title = "Conflict";
+            typeUri = "https://tools.ietf.org/html/rfc7231#section-6.5.8";
+            detail = "Someone else changed this record. Please refresh and try again.";
+        }
+        else if (exception is Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+        {
+            statusCode = (int)HttpStatusCode.Conflict;
+            title = "Conflict";
+            typeUri = "https://tools.ietf.org/html/rfc7231#section-6.5.8";
+
+            var innerMsg = dbEx.InnerException?.Message ?? dbEx.Message;
+            if (innerMsg.Contains("23505") || innerMsg.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) || innerMsg.Contains("unique constraint", StringComparison.OrdinalIgnoreCase))
+            {
+                detail = "A record with this information already exists.";
+            }
+            else if (innerMsg.Contains("23503") || innerMsg.Contains("foreign key", StringComparison.OrdinalIgnoreCase) || innerMsg.Contains("reference constraint", StringComparison.OrdinalIgnoreCase))
+            {
+                detail = "This item cannot be deleted because it is being used by other records.";
+            }
+            else
+            {
+                detail = "This record cannot be saved because it conflicts with existing data.";
+            }
+        }
+        else if (exception is InvalidOperationException invEx)
+        {
+            statusCode = (int)HttpStatusCode.BadRequest;
+            title = "Bad Request";
+            typeUri = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+            if (invEx.Message.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) ||
+                invEx.Message.Contains("Exception", StringComparison.OrdinalIgnoreCase) ||
+                invEx.Message.Contains("SQL", StringComparison.OrdinalIgnoreCase) ||
+                invEx.Message.Contains("at ", StringComparison.OrdinalIgnoreCase))
+            {
+                detail = "The operation could not be completed. Please check your request and try again.";
+            }
+            else
+            {
+                detail = invEx.Message;
+            }
+        }
+        else
+        {
+            statusCode = (int)HttpStatusCode.InternalServerError;
+            title = "Internal Server Error";
+            typeUri = "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+            detail = "Something went wrong on our end. Please try again in a moment. If the problem continues, contact support.";
+        }
 
         context.Response.StatusCode = statusCode;
-
-        var detail = statusCode == (int)HttpStatusCode.InternalServerError && !_env.IsDevelopment()
-            ? "An unexpected internal server error occurred. Please contact system support."
-            : exception.Message;
 
         var problemDetails = new ProblemDetails
         {
@@ -79,6 +129,7 @@ public class ExceptionHandlingMiddleware
             Instance = context.Request.Path
         };
 
+        problemDetails.Extensions["message"] = detail;
         problemDetails.Extensions["traceId"] = context.TraceIdentifier;
 
         if (exception is FluentValidation.ValidationException validationEx)

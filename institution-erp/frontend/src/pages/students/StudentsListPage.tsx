@@ -8,6 +8,7 @@ import Modal from '../../components/ui/Modal';
 import { CredentialSlipModal, CredentialSlipData } from '../../components/common/CredentialSlipModal';
 import { Search, Download, Eye, EyeOff, Trash2, Plus, Edit, UserCheck, ShieldCheck, KeyRound, Copy, Check, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '../../store/authContext';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export const StudentsListPage: React.FC = () => {
   const { hasRole } = useAuth();
@@ -159,7 +160,7 @@ export const StudentsListPage: React.FC = () => {
       }
     },
     onError: (err: any) => {
-      alert(`Enrollment failed: ${err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -195,7 +196,7 @@ export const StudentsListPage: React.FC = () => {
       }
     },
     onError: (err: any) => {
-      alert(`Password reset failed: ${err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -207,7 +208,7 @@ export const StudentsListPage: React.FC = () => {
       alert('Student record updated successfully across all portals and directories!');
     },
     onError: (err: any) => {
-      alert(`Update failed: ${err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -218,7 +219,7 @@ export const StudentsListPage: React.FC = () => {
       setSelectedStudent(null);
     },
     onError: (err: any) => {
-      alert(`Failed to remove student: ${err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 

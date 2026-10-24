@@ -11,6 +11,7 @@ import {
   XCircle,
   FileText,
 } from 'lucide-react';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export const ApplyAdmissionPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -100,7 +101,7 @@ export const ApplyAdmissionPage: React.FC = () => {
 
       setSuccessResult(result);
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.response?.data?.message || 'Failed to submit application. Please check inputs.');
+      setError(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }

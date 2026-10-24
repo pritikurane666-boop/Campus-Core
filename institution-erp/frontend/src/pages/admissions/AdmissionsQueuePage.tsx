@@ -7,6 +7,7 @@ import Modal from '../../components/ui/Modal';
 import { CredentialSlipModal, CredentialSlipData } from '../../components/common/CredentialSlipModal';
 import { CheckCircle2, XCircle, Clock, FileText, Search, Filter, Eye, Check, X, Download, ExternalLink, Trash2, AlertTriangle, GraduationCap, Copy, KeyRound } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export const AdmissionsQueuePage: React.FC = () => {
   const navigate = useNavigate();
@@ -109,7 +110,7 @@ export const AdmissionsQueuePage: React.FC = () => {
     },
 
     onError: (err: any) => {
-      alert(`Status update failed: ${err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -126,7 +127,7 @@ export const AdmissionsQueuePage: React.FC = () => {
       setTimeout(() => setActionSuccess(null), 5000);
     },
     onError: (err: any) => {
-      alert(`Failed to delete application: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 

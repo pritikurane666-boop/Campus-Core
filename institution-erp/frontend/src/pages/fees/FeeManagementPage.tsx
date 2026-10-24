@@ -6,6 +6,7 @@ import { Student, StudentFee } from '../../types';
 import Modal from '../../components/ui/Modal';
 import { Skeleton } from '../../components/common/Skeleton';
 import { useAuth } from '../../store/authContext';
+import { getErrorMessage } from '../../utils/errorMessage';
 import {
   Search,
   CreditCard,
@@ -134,7 +135,7 @@ export const FeeManagementPage: React.FC = () => {
       alert(`Fee payment recorded successfully! Official receipt #${receiptNo} generated. Click 'Download QuestPDF Receipt' to save.`);
     },
     onError: (err: any) => {
-      alert(`Payment failed: ${err.response?.data?.message || err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -159,7 +160,7 @@ export const FeeManagementPage: React.FC = () => {
       alert('Fee structure configured and saved successfully!');
     },
     onError: (err: any) => {
-      alert(`Failed to save fee structure: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -172,7 +173,7 @@ export const FeeManagementPage: React.FC = () => {
       alert('Fee structure deleted successfully.');
     },
     onError: (err: any) => {
-      alert(`Failed to delete fee structure: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -195,7 +196,7 @@ export const FeeManagementPage: React.FC = () => {
       ]);
     },
     onError: (err: any) => {
-      alert(`Failed to create fee head: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
