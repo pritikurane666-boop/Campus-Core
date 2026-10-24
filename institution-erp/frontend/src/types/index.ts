@@ -192,6 +192,7 @@ export interface Admission {
   phoneNumber: string;
   dateOfBirth: string;
   gender: string;
+  bloodGroup?: string;
   address: string;
   guardianName: string;
   guardianPhone: string;

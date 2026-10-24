@@ -43,6 +43,18 @@ public class DatabaseSeeder
             }
         }
 
+        if (_db.Database.IsRelational())
+        {
+            try
+            {
+                await _db.Database.ExecuteSqlRawAsync("ALTER TABLE admissions ADD COLUMN IF NOT EXISTS blood_group text NULL;");
+            }
+            catch
+            {
+                // Ignore if not supported on the provider
+            }
+        }
+
         // 1. Roles - Ensure canonical RBAC Roles exist
         var roleNames = Enum.GetNames<UserRoleType>();
         foreach (var roleName in roleNames)

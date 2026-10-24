@@ -59,6 +59,7 @@ public class AdmissionsController : ControllerBase
             PhoneNumber = request.PhoneNumber,
             DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth, DateTimeKind.Utc),
             Gender = request.Gender,
+            BloodGroup = request.BloodGroup?.Trim().ToUpperInvariant(),
             Address = request.Address,
             GuardianName = request.GuardianName,
             GuardianPhone = request.GuardianPhone,
@@ -98,6 +99,7 @@ public class AdmissionsController : ControllerBase
             FullName = admission.FullName,
             Email = admission.Email,
             PhoneNumber = admission.PhoneNumber,
+            BloodGroup = admission.BloodGroup,
             Status = admission.Status,
             CreatedAt = admission.CreatedAt
         });
@@ -123,6 +125,7 @@ public class AdmissionsController : ControllerBase
             FullName = adm.FullName,
             Email = adm.Email,
             PhoneNumber = adm.PhoneNumber,
+            BloodGroup = adm.BloodGroup,
             DesiredClassName = adm.DesiredClassRoom?.FullName ?? "N/A",
             Status = adm.Status,
             ReviewRemarks = adm.ReviewRemarks,
@@ -156,9 +159,9 @@ public class AdmissionsController : ControllerBase
             return BadRequest(new { message = "Only PDF documents (.pdf) are accepted." });
         }
 
-        if (request.File.Length > 5 * 1024 * 1024)
+        if (request.File.Length > 2 * 1024 * 1024)
         {
-            return BadRequest(new { message = "File size must not exceed 5 MB." });
+            return BadRequest(new { message = "File size must not exceed 2 MB." });
         }
 
         using var stream = request.File.OpenReadStream();
@@ -247,6 +250,7 @@ public class AdmissionsController : ControllerBase
                 PhoneNumber = a.PhoneNumber,
                 DateOfBirth = a.DateOfBirth,
                 Gender = a.Gender,
+                BloodGroup = a.BloodGroup,
                 Address = a.Address,
                 GuardianName = a.GuardianName,
                 GuardianPhone = a.GuardianPhone,
@@ -321,6 +325,7 @@ public class AdmissionsController : ControllerBase
         {
             var admission = await _db.Admissions
                 .Include(a => a.DesiredClassRoom)
+                .Include(a => a.Documents)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (admission == null) return NotFound();
@@ -392,6 +397,13 @@ public class AdmissionsController : ControllerBase
             // 2. If Approved: restore existing student or create new student account & fees
             else if (request.NewStatus == AdmissionStatus.Approved)
             {
+                var hasIdentity = admission.Documents.Any(d => d.DocumentType.Equals("IdentityProof", StringComparison.OrdinalIgnoreCase) || d.DocumentType.Equals("BirthCertificate", StringComparison.OrdinalIgnoreCase));
+                var hasMarksheet = admission.Documents.Any(d => d.DocumentType.Equals("PreviousMarksheet", StringComparison.OrdinalIgnoreCase));
+                if (!hasIdentity || !hasMarksheet)
+                {
+                    return BadRequest(new { message = "Cannot approve admission: required documents (Birth Certificate / Identity Proof and Previous School Marksheet) are missing." });
+                }
+
                 if (admission.CreatedStudentId.HasValue)
                 {
                     var existingStudent = await _db.Students
@@ -405,6 +417,10 @@ public class AdmissionsController : ControllerBase
                         existingStudent.Status = StudentStatus.Active;
                         existingStudent.IsDeleted = false;
                         existingStudent.ClassRoomId = admission.DesiredClassRoomId;
+                        if (!string.IsNullOrEmpty(admission.BloodGroup))
+                        {
+                            existingStudent.BloodGroup = admission.BloodGroup;
+                        }
                         enrolledRegNo = existingStudent.StudentRegistrationNumber;
 
                         var newStudentPass = PasswordGenerator.Generate(14);
@@ -580,7 +596,7 @@ public class AdmissionsController : ControllerBase
                         RollNumber = rollNo,
                         DateOfBirth = DateTime.SpecifyKind(admission.DateOfBirth, DateTimeKind.Utc),
                         Gender = admission.Gender,
-                        BloodGroup = "O+",
+                        BloodGroup = admission.BloodGroup ?? "O+",
                         Address = admission.Address,
                         ClassRoomId = admission.DesiredClassRoomId,
                         AdmissionDate = DateTime.UtcNow,

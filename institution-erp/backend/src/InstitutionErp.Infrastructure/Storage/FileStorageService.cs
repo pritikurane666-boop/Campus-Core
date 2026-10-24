@@ -16,7 +16,7 @@ public class FileStorageService : IFileStorage
     private readonly ILogger<FileStorageService> _logger;
     private readonly string _baseStoragePath;
     private static readonly string[] AllowedExtensions = { ".pdf" };
-    private const long MaxFileSize = 5 * 1024 * 1024; // 5 MB
+    private const long MaxFileSize = 2 * 1024 * 1024; // 2 MB
 
     private bool IsSupabaseConfigured =>
         !string.IsNullOrWhiteSpace(_supabaseOptions.Url) &&
@@ -52,7 +52,7 @@ public class FileStorageService : IFileStorage
 
         if (stream.Length > MaxFileSize)
         {
-            throw new InvalidOperationException("File size exceeds the 5 MB limit.");
+            throw new InvalidOperationException("File size exceeds the 2 MB limit.");
         }
 
         var uniqueFileName = $"{Guid.NewGuid()}{ext}";
