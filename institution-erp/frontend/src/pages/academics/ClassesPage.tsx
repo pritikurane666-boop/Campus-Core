@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { academicApi, teachersApi } from '../../api/endpoints';
 import { ClassRoom, Subject, Student, Teacher } from '../../types';
 import Modal from '../../components/ui/Modal';
+import { getErrorMessage } from '../../utils/errorMessage';
 import { Skeleton } from '../../components/common/Skeleton';
 import {
   School,
@@ -33,7 +34,7 @@ export const ClassesPage: React.FC = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { hasRole, user } = useAuth();
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
   const isTeacher = hasRole('Teacher') && !isAdmin;
 
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
@@ -216,7 +217,7 @@ export const ClassesPage: React.FC = () => {
       alert('Class created successfully!');
     },
     onError: (err: any) => {
-      alert(`Failed to create class: ${err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -232,7 +233,7 @@ export const ClassesPage: React.FC = () => {
       alert('New subject added to curriculum catalog!');
     },
     onError: (err: any) => {
-      alert(`Failed to create subject: ${err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -249,7 +250,7 @@ export const ClassesPage: React.FC = () => {
       alert(res?.message || 'Subject assigned to class curriculum successfully!');
     },
     onError: (err: any) => {
-      alert(`Assignment failed: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -267,7 +268,7 @@ export const ClassesPage: React.FC = () => {
       alert(res?.message || 'Faculty assigned to subject successfully!');
     },
     onError: (err: any) => {
-      alert(`Failed to assign faculty: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -282,7 +283,7 @@ export const ClassesPage: React.FC = () => {
       alert(res?.message || 'Faculty removed from subject.');
     },
     onError: (err: any) => {
-      alert(`Failed to remove faculty: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -295,7 +296,7 @@ export const ClassesPage: React.FC = () => {
       alert('Subject successfully removed from class curriculum.');
     },
     onError: (err: any) => {
-      alert(`Failed to remove subject: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -307,7 +308,7 @@ export const ClassesPage: React.FC = () => {
       alert('Class deleted successfully!');
     },
     onError: (err: any) => {
-      alert(`Failed to delete class: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 

@@ -14,12 +14,18 @@ public class LoginRequestValidator : AbstractValidator<LoginRequest>
 
 public class ApplyAdmissionRequestValidator : AbstractValidator<ApplyAdmissionRequest>
 {
+    private static readonly string[] ValidBloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
     public ApplyAdmissionRequestValidator()
     {
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(50);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(50);
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.PhoneNumber).NotEmpty().MinimumLength(10);
+        RuleFor(x => x.BloodGroup)
+            .NotEmpty().WithMessage("Blood group is required.")
+            .Must(bg => !string.IsNullOrEmpty(bg) && ValidBloodGroups.Contains(bg.Trim().ToUpperInvariant()))
+            .WithMessage("Blood group must be one of: A+, A-, B+, B-, AB+, AB-, O+, O-.");
         RuleFor(x => x.GuardianName).NotEmpty();
         RuleFor(x => x.GuardianPhone).NotEmpty();
         RuleFor(x => x.DesiredClassRoomId).NotEmpty();
@@ -122,7 +128,10 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(50);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(50);
-        RuleFor(x => x.Roles).NotEmpty().WithMessage("At least one role must be specified.");
+        RuleFor(x => x.Roles)
+            .NotEmpty().WithMessage("At least one role must be specified.")
+            .Must(roles => roles.All(r => r.Equals("HOD", StringComparison.OrdinalIgnoreCase) || r.Equals("Teacher", StringComparison.OrdinalIgnoreCase)))
+            .WithMessage("Only HOD and Teacher roles can be assigned.");
     }
 }
 

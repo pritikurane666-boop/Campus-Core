@@ -7,10 +7,11 @@ import { SkeletonTeacherCard } from '../../components/common/Skeleton';
 import { CredentialSlipModal, CredentialSlipData } from '../../components/common/CredentialSlipModal';
 import { Users, Plus, BookOpen, CheckCircle, Mail, Phone, Award, Calendar, Trash2, X, KeyRound, Copy, Check, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../store/authContext';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export const TeachersListPage: React.FC = () => {
   const { hasRole } = useAuth();
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'directory' | 'attendance'>('directory');
   const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
@@ -91,7 +92,7 @@ export const TeachersListPage: React.FC = () => {
       alert('Teacher assigned successfully to classroom!');
     },
     onError: (err: any) => {
-      alert(`Allocation failed: ${err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -110,7 +111,7 @@ export const TeachersListPage: React.FC = () => {
       alert(res?.message || 'Faculty successfully deallocated from classroom!');
     },
     onError: (err: any) => {
-      alert(`Deallocation failed: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -148,7 +149,7 @@ export const TeachersListPage: React.FC = () => {
       }
     },
     onError: (err: any) => {
-      alert(`Failed to add teacher: ${err.response?.data?.message || err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -184,7 +185,7 @@ export const TeachersListPage: React.FC = () => {
       }
     },
     onError: (err: any) => {
-      alert(`Password reset failed: ${err.response?.data?.message || err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -195,7 +196,7 @@ export const TeachersListPage: React.FC = () => {
       alert('Faculty member successfully deactivated/removed.');
     },
     onError: (err: any) => {
-      alert(`Failed to remove faculty member: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -206,7 +207,7 @@ export const TeachersListPage: React.FC = () => {
       alert('Faculty attendance recorded successfully!');
     },
     onError: (err: any) => {
-      alert(`Failed to mark attendance: ${err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -320,7 +321,7 @@ export const TeachersListPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Password (Visible to Principal) */}
+                  {/* Password (Visible to HOD) */}
                   {t.generatedPassword && (
                     <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-1.5 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-1.5 min-w-0">

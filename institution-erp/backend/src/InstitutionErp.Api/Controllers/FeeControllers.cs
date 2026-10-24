@@ -101,7 +101,7 @@ public class FeeStructuresController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<FeeStructureDto>> Create([FromBody] CreateFeeStructureRequest request)
     {
         var resolvedHeadIds = new List<(CreateFeeStructureItemRequest Item, Guid HeadId)>();
@@ -171,7 +171,7 @@ public class FeeStructuresController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<FeeStructureDto>> Update(Guid id, [FromBody] CreateFeeStructureRequest request)
     {
         var resolvedHeadIds = new List<(CreateFeeStructureItemRequest Item, Guid HeadId)>();
@@ -287,7 +287,7 @@ public class FeeStructuresController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var fs = await _db.FeeStructures
@@ -371,7 +371,7 @@ public class FeeHeadsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<FeeHeadDto>> Create([FromBody] CreateFeeHeadRequest request)
     {
         var head = new FeeHead
@@ -390,7 +390,7 @@ public class FeeHeadsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<FeeHeadDto>> Update(Guid id, [FromBody] CreateFeeHeadRequest request)
     {
         var head = await _db.FeeHeads.FirstOrDefaultAsync(h => h.Id == id);
@@ -407,7 +407,7 @@ public class FeeHeadsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var head = await _db.FeeHeads.FirstOrDefaultAsync(h => h.Id == id);
@@ -458,8 +458,8 @@ public class FeesController : ControllerBase
     [HttpGet("student/{studentId}")]
     public async Task<ActionResult<List<StudentFeeDto>>> GetStudentFees(Guid studentId)
     {
-        // RBAC check: Only Principal or self-student/parent can view fees
-        if (_currentUserService.IsInRole("Principal"))
+        // RBAC check: Only HOD or self-student/parent can view fees
+        if (_currentUserService.IsInRole("HOD"))
         {
             // Allowed
         }
@@ -633,7 +633,7 @@ public class FeesController : ControllerBase
     }
 
     [HttpPost("payments")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<FeePaymentDto>> RecordPayment([FromBody] CollectPaymentRequest request)
     {
         var studentFee = await _db.StudentFees
@@ -761,7 +761,7 @@ public class FeesController : ControllerBase
                     Mode = request.Mode,
                     TransactionReference = request.TransactionReference,
                     PaymentDate = DateTime.UtcNow,
-                    ReceivedBy = _currentUserService.Email ?? "Principal",
+                    ReceivedBy = _currentUserService.Email ?? "HOD",
                     Remarks = request.Remarks
                 };
 
@@ -823,7 +823,7 @@ public class FeesController : ControllerBase
     }
 
     [HttpPost("payments/bulk")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<BulkPaymentResponseDto>> RecordBulkPayment([FromBody] CollectBulkPaymentRequest request)
     {
         if (request.Items == null || request.Items.Count == 0)
@@ -1029,8 +1029,8 @@ public class FeesController : ControllerBase
 
         var student = payment.StudentFee.Student;
 
-        // RBAC check: Only Principal or self-student/parent can view receipts
-        if (_currentUserService.IsInRole("Principal"))
+        // RBAC check: Only HOD or self-student/parent can view receipts
+        if (_currentUserService.IsInRole("HOD"))
         {
             // Allowed
         }
@@ -1057,7 +1057,7 @@ public class FeesController : ControllerBase
     }
 
     [HttpGet("reports/collection")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<FeeCollectionSummaryDto>> GetCollectionSummary()
     {
         var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
@@ -1098,7 +1098,7 @@ public class FeesController : ControllerBase
     }
 
     [HttpGet("reports/defaulters")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<List<FeeDefaulterDto>>> GetDefaulters([FromQuery] Guid? classId)
     {
         var now = DateTime.UtcNow;
@@ -1139,7 +1139,7 @@ public class FeesController : ControllerBase
     }
 
     [HttpGet("reports/defaulters/export")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> ExportDefaultersToCsv([FromQuery] Guid? classId)
     {
         var defaultersRes = await GetDefaulters(classId);

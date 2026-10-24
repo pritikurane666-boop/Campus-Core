@@ -2,7 +2,7 @@ namespace InstitutionErp.Domain.Enums;
 
 public enum UserRoleType
 {
-    Principal,
+    HOD,
     Teacher,
     Student
 }
@@ -83,7 +83,7 @@ public enum ExamType
 public enum NoticeAudience
 {
     All,
-    Principal,
+    HOD,
     Teacher,
     Student,
     SpecificClass

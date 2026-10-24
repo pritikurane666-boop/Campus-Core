@@ -32,14 +32,14 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpPost("mark")]
-    [Authorize(Roles = "Principal,Teacher")]
+    [Authorize(Roles = "HOD,Teacher")]
     public async Task<IActionResult> MarkAttendance([FromBody] BulkMarkAttendanceRequest request)
     {
         var targetDate = DateTime.SpecifyKind(request.Date.Date, DateTimeKind.Utc);
         var nextDate = targetDate.AddDays(1);
         var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
 
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        var isAdmin = _currentUserService.IsInRole("HOD");
 
         // Teacher can only edit the same day
         if (!isAdmin && targetDate != today)
@@ -130,7 +130,7 @@ public class AttendanceController : ControllerBase
                     NotificationChannelType.Email,
                     student.User.Email,
                     "Attendance Notice - Absenteeism Alert",
-                    $"<p>Dear {student.User.FirstName},</p><p>{msg}</p><p>Please contact the principal or class teacher if this was unintended.</p>"
+                    $"<p>Dear {student.User.FirstName},</p><p>{msg}</p><p>Please contact the HOD or class teacher if this was unintended.</p>"
                 );
             }
         }
@@ -149,7 +149,7 @@ public class AttendanceController : ControllerBase
         var classRoom = await _db.Classes.FindAsync(classId);
         if (classRoom == null) return NotFound("Class not found.");
 
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        var isAdmin = _currentUserService.IsInRole("HOD");
         if (isAdmin)
         {
             // Allowed
@@ -229,8 +229,8 @@ public class AttendanceController : ControllerBase
 
         if (student == null) return NotFound();
 
-        // RBAC check: Principal/Admin, allocated Teacher, or self-student/parent
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        // RBAC check: HOD/Admin, allocated Teacher, or self-student/parent
+        var isAdmin = _currentUserService.IsInRole("HOD");
         if (isAdmin)
         {
             // Allowed
@@ -287,7 +287,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpGet("low-attendance")]
-    [Authorize(Roles = "Principal,Teacher")]
+    [Authorize(Roles = "HOD,Teacher")]
     public async Task<ActionResult<List<StudentAttendanceSummaryDto>>> GetLowAttendanceStudents([FromQuery] Guid? classId)
     {
         var query = _db.Students
@@ -296,7 +296,7 @@ public class AttendanceController : ControllerBase
             .Include(s => s.ClassRoom)
             .AsNoTracking();
 
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        var isAdmin = _currentUserService.IsInRole("HOD");
         if (!isAdmin && _currentUserService.IsInRole("Teacher"))
         {
             var teacher = await _db.Teachers.FirstOrDefaultAsync(t => t.UserId == _currentUserService.UserId);

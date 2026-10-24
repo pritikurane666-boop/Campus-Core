@@ -7,6 +7,7 @@ import Modal from '../../components/ui/Modal';
 import { CredentialSlipModal, CredentialSlipData } from '../../components/common/CredentialSlipModal';
 import { CheckCircle2, XCircle, Clock, FileText, Search, Filter, Eye, Check, X, Download, ExternalLink, Trash2, AlertTriangle, GraduationCap, Copy, KeyRound } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export const AdmissionsQueuePage: React.FC = () => {
   const navigate = useNavigate();
@@ -109,7 +110,7 @@ export const AdmissionsQueuePage: React.FC = () => {
     },
 
     onError: (err: any) => {
-      alert(`Status update failed: ${err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -126,7 +127,7 @@ export const AdmissionsQueuePage: React.FC = () => {
       setTimeout(() => setActionSuccess(null), 5000);
     },
     onError: (err: any) => {
-      alert(`Failed to delete application: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -356,7 +357,7 @@ export const AdmissionsQueuePage: React.FC = () => {
             {/* Applicant Personal Details */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900/50">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">Applicant Information</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
                 <div>
                   <span className="text-slate-400">Date of Birth:</span>
                   <p className="font-medium text-slate-800 dark:text-slate-200 mt-0.5">{new Date(selectedAdmission.dateOfBirth).toLocaleDateString()}</p>
@@ -364,6 +365,14 @@ export const AdmissionsQueuePage: React.FC = () => {
                 <div>
                   <span className="text-slate-400">Gender:</span>
                   <p className="font-medium text-slate-800 dark:text-slate-200 mt-0.5">{selectedAdmission.gender}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400">Blood Group:</span>
+                  <p className="font-medium text-slate-800 dark:text-slate-200 mt-0.5">
+                    <span className="inline-flex items-center rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 px-2 py-0.5 font-bold text-rose-700 dark:text-rose-300">
+                      {selectedAdmission.bloodGroup || 'N/A'}
+                    </span>
+                  </p>
                 </div>
                 <div className="min-w-0">
                   <span className="text-slate-400">Email Address:</span>
@@ -373,7 +382,7 @@ export const AdmissionsQueuePage: React.FC = () => {
                   <span className="text-slate-400">Phone Number:</span>
                   <p className="font-medium text-slate-800 dark:text-slate-200 mt-0.5">{selectedAdmission.phoneNumber || 'N/A'}</p>
                 </div>
-                <div className="sm:col-span-2 min-w-0">
+                <div className="sm:col-span-3 min-w-0">
                   <span className="text-slate-400">Residential Address:</span>
                   <p className="font-medium text-slate-800 dark:text-slate-200 mt-0.5 break-words">{selectedAdmission.address || 'N/A'}</p>
                 </div>

@@ -7,12 +7,13 @@ import Modal from '../../components/ui/Modal';
 import { Skeleton } from '../../components/common/Skeleton';
 import { Bell, Pin, Plus, Trash2, Calendar, Users, Filter, BookOpen, Award, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../store/authContext';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export const NoticesPage: React.FC = () => {
   const { user, hasRole } = useAuth();
-  const isPrincipal = hasRole('Principal');
+  const isHod = hasRole('HOD');
   const isTeacher = hasRole('Teacher');
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
   const queryClient = useQueryClient();
 
   const [audienceFilter, setAudienceFilter] = useState('');
@@ -54,7 +55,7 @@ export const NoticesPage: React.FC = () => {
       alert('Notice published successfully!');
     },
     onError: (err: any) => {
-      alert(`Failed to publish notice: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -64,7 +65,7 @@ export const NoticesPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['notices-list'] });
     },
     onError: (err: any) => {
-      alert(`Failed to delete notice: ${err.response?.data?.message || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -103,7 +104,7 @@ export const NoticesPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {(isPrincipal || isTeacher) && (
+          {(isHod || isTeacher) && (
             <button
               onClick={handleOpenCreateModal}
               className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition"
@@ -113,7 +114,7 @@ export const NoticesPage: React.FC = () => {
             </button>
           )}
 
-          {!isTeacher && !isPrincipal && (
+          {!isTeacher && !isHod && (
             <>
               <Link
                 to="/dashboard"
@@ -146,7 +147,7 @@ export const NoticesPage: React.FC = () => {
         <Filter className="h-4 w-4 text-slate-400" />
         <span className="text-xs font-semibold text-slate-600">Audience Filter:</span>
         <div className="flex gap-1.5 flex-wrap">
-          {['', 'All', 'Principal', 'Teacher', 'Student', 'SpecificClass'].map((aud) => (
+          {['', 'All', 'HOD', 'Teacher', 'Student', 'SpecificClass'].map((aud) => (
             <button
               key={aud}
               onClick={() => setAudienceFilter(aud)}
@@ -156,7 +157,7 @@ export const NoticesPage: React.FC = () => {
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              {aud === '' ? 'Show Everything' : aud === 'SpecificClass' ? 'Class Specific' : aud}
+              {aud === '' ? 'Show Everything' : aud === 'SpecificClass' ? 'Class Specific' : aud === 'HOD' ? 'HOD' : aud}
             </button>
           ))}
         </div>
@@ -185,7 +186,7 @@ export const NoticesPage: React.FC = () => {
         ) : filteredNotices && filteredNotices.length > 0 ? (
           filteredNotices.map((n) => {
             const isCreator = user?.email && (n.postedBy === user.email || n.postedBy === user.fullName);
-            const canDelete = isPrincipal || (isTeacher && isCreator);
+            const canDelete = isHod || (isTeacher && isCreator);
 
             return (
               <div
@@ -292,7 +293,7 @@ export const NoticesPage: React.FC = () => {
                 className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-indigo-500 focus:outline-none"
               >
                 <option value="All">All Campus (Faculty & Students)</option>
-                <option value="Principal">Principal Executive</option>
+                <option value="HOD">HOD (Head of Department)</option>
                 <option value="Teacher">Faculty Only</option>
                 <option value="Student">Students Only</option>
                 <option value="SpecificClass">Specific Classroom Cohort</option>

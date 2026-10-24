@@ -6,12 +6,13 @@ import { Student, CreateStudentResponse, ResetPasswordResponse } from '../../typ
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
 import { CredentialSlipModal, CredentialSlipData } from '../../components/common/CredentialSlipModal';
-import { Search, Download, Eye, EyeOff, Trash2, Plus, Edit, UserCheck, ShieldCheck, KeyRound, Copy, Check } from 'lucide-react';
+import { Search, Download, Eye, EyeOff, Trash2, Plus, Edit, UserCheck, ShieldCheck, KeyRound, Copy, Check, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '../../store/authContext';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export const StudentsListPage: React.FC = () => {
   const { hasRole } = useAuth();
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
   const isTeacher = hasRole('Teacher');
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -21,6 +22,16 @@ export const StudentsListPage: React.FC = () => {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
+    const saved = localStorage.getItem('students_view_mode');
+    return saved === 'cards' ? 'cards' : 'table';
+  });
+
+  const handleViewModeChange = (mode: 'table' | 'cards') => {
+    setViewMode(mode);
+    localStorage.setItem('students_view_mode', mode);
+  };
 
   // If a studentId is provided in URL, fetch and open their profile modal
   const { data: urlStudent } = useQuery({
@@ -149,7 +160,7 @@ export const StudentsListPage: React.FC = () => {
       }
     },
     onError: (err: any) => {
-      alert(`Enrollment failed: ${err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -185,7 +196,7 @@ export const StudentsListPage: React.FC = () => {
       }
     },
     onError: (err: any) => {
-      alert(`Password reset failed: ${err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -197,7 +208,7 @@ export const StudentsListPage: React.FC = () => {
       alert('Student record updated successfully across all portals and directories!');
     },
     onError: (err: any) => {
-      alert(`Update failed: ${err.response?.data?.detail || err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -208,7 +219,7 @@ export const StudentsListPage: React.FC = () => {
       setSelectedStudent(null);
     },
     onError: (err: any) => {
-      alert(`Failed to remove student: ${err.message}`);
+      alert(getErrorMessage(err));
     },
   });
 
@@ -445,7 +456,7 @@ export const StudentsListPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <select
             value={selectedClassId}
             onChange={(e) => {
@@ -461,18 +472,220 @@ export const StudentsListPage: React.FC = () => {
               </option>
             ))}
           </select>
+
+          {/* Table / Cards View Toggle */}
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5">
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('table')}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                viewMode === 'table'
+                  ? 'bg-white text-indigo-700 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Table View"
+            >
+              <List className="h-4 w-4" />
+              <span>Table</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('cards')}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                viewMode === 'cards'
+                  ? 'bg-white text-indigo-700 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Cards View"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span>Cards</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Data Table */}
-      <DataTable
-        columns={columns}
-        data={data?.items || []}
-        isLoading={isLoading}
-        page={page}
-        totalPages={data?.totalPages || 1}
-        onPageChange={setPage}
-      />
+      {/* Main Student Listing: Table or Cards View */}
+      {viewMode === 'table' ? (
+        <DataTable
+          columns={columns}
+          data={data?.items || []}
+          isLoading={isLoading}
+          page={page}
+          totalPages={data?.totalPages || 1}
+          onPageChange={setPage}
+        />
+      ) : (
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-48 rounded-xl border border-slate-200 bg-white p-5 animate-pulse" />
+              ))}
+            </div>
+          ) : data?.items && data.items.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {data.items.map((student) => (
+                  <div
+                    key={student.id}
+                    className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded px-2 py-0.5">
+                            Roll #{student.rollNumber}
+                          </span>
+                          <span className="rounded bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+                            {student.className}
+                          </span>
+                        </div>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                            student.status === 'Active'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : student.status === 'Alumni'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}
+                        >
+                          {student.status}
+                        </span>
+                      </div>
+
+                      <div className="mt-3">
+                        <h3 className="font-semibold text-slate-900 text-sm truncate">{student.fullName}</h3>
+                        <p className="text-xs text-slate-500 font-mono truncate">{student.email || 'No email'}</p>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs border-t border-slate-100 pt-2.5">
+                        <div>
+                          <span className="text-[11px] text-slate-400 block">Gender</span>
+                          <span className="font-medium text-slate-700">{student.gender || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[11px] text-slate-400 block">Admission Date</span>
+                          <span className="font-medium text-slate-700">{new Date(student.admissionDate).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      {isAdmin && (
+                        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <KeyRound className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                            <span className="text-[11px] text-slate-500 font-medium">Password:</span>
+                            <span className="font-mono font-semibold text-slate-800 truncate">
+                              {revealedPasswords[student.id] ? (student.generatedPassword || '—') : '••••••••'}
+                            </span>
+                          </div>
+                          {student.generatedPassword && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => toggleRevealPassword(student.id)}
+                                className="text-slate-400 hover:text-indigo-600 p-0.5 rounded"
+                                title={revealedPasswords[student.id] ? 'Hide password' : 'Show password'}
+                              >
+                                {revealedPasswords[student.id] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyPassword(student.id, student.generatedPassword)}
+                                className="text-slate-400 hover:text-indigo-600 p-0.5 rounded"
+                                title="Copy password"
+                              >
+                                {copiedPasswordId === student.id ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="mt-4 flex items-center justify-between gap-1.5 border-t border-slate-100 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedStudent(student)}
+                        className="inline-flex items-center gap-1 rounded bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                        title="View Full Profile"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>Profile</span>
+                      </button>
+                      {isAdmin && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(student)}
+                            className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                            title="Edit Student"
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setResetPasswordStudent(student);
+                              setCustomResetPassword('');
+                            }}
+                            className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+                            title="Reset Student Password"
+                          >
+                            <KeyRound className="h-3.5 w-3.5" />
+                            <span>Reset</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to deactivate student ${student.fullName}?`)) {
+                                deleteMutation.mutate(student.id);
+                              }
+                            }}
+                            className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                            title="Deactivate Student"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination in Cards View */}
+              <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 sm:px-6 rounded-xl shadow-sm">
+                <div className="text-xs text-slate-700">
+                  Page <span className="font-semibold">{page}</span> of <span className="font-semibold">{data.totalPages || 1}</span> ({data.totalCount || 0} students)
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setPage((p) => Math.min(data.totalPages || 1, p + 1))}
+                    disabled={page >= (data.totalPages || 1)}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500">
+              No students found matching current filters.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Student Profile Modal */}
       {selectedStudent && (
@@ -538,7 +751,7 @@ export const StudentsListPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Login Credentials (Visible to Principal) */}
+            {/* Login Credentials (Visible to HOD) */}
             {isAdmin && (
               <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
                 <div className="flex items-center justify-between">
@@ -549,7 +762,7 @@ export const StudentsListPage: React.FC = () => {
                     </h4>
                   </div>
                   <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-100/80 px-2 py-0.5 rounded-full">
-                    Principal View
+                    HOD View
                   </span>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-3 text-xs">

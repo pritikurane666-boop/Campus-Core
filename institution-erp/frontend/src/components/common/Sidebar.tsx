@@ -28,7 +28,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { hasRole, user } = useAuth();
 
-  const isPrincipal = hasRole('Principal');
+  const isHod = hasRole('HOD');
   const isTeacher = hasRole('Teacher');
   const isStudent = hasRole('Student');
 
@@ -44,55 +44,55 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       title: 'Student Portal',
       path: '/portal',
       icon: HeartHandshake,
-      show: !isStudent && (isPrincipal || isTeacher),
+      show: !isStudent && (isHod || isTeacher),
     },
     {
       title: 'Admissions Queue',
       path: '/admissions',
       icon: UserPlus,
-      show: isPrincipal,
+      show: isHod,
     },
     {
       title: 'Students Directory',
       path: '/students',
       icon: Users,
-      show: isPrincipal,
+      show: isHod,
     },
     {
       title: 'Teachers & Staff',
       path: '/teachers',
       icon: GraduationCap,
-      show: isPrincipal,
+      show: isHod,
     },
     {
       title: 'Classes & Subjects',
       path: '/classes',
       icon: BookOpen,
-      show: isPrincipal || isTeacher,
+      show: isHod || isTeacher,
     },
     {
       title: 'Timetable Grid',
       path: '/timetable',
       icon: Calendar,
-      show: isPrincipal || isTeacher || isStudent,
+      show: isHod || isTeacher || isStudent,
     },
     {
       title: 'Attendance',
       path: '/attendance',
       icon: CheckSquare,
-      show: isPrincipal || isTeacher,
+      show: isHod || isTeacher,
     },
     {
       title: 'Exams & Results',
       path: '/exams',
       icon: FileSpreadsheet,
-      show: isPrincipal || isTeacher || isStudent,
+      show: isHod || isTeacher || isStudent,
     },
     {
       title: 'Fee Management',
       path: '/fees',
       icon: Receipt,
-      show: isPrincipal,
+      show: isHod,
     },
     {
       title: 'Notices Board',
@@ -104,19 +104,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       title: 'Staff & Roles',
       path: '/admin/users',
       icon: ShieldCheck,
-      show: isPrincipal,
+      show: isHod,
     },
     {
       title: 'System Audit Logs',
       path: '/admin/audit-logs',
       icon: History,
-      show: isPrincipal,
+      show: isHod,
     },
     {
       title: 'Supabase Cloud',
       path: '/admin/supabase',
       icon: Cloud,
-      show: isPrincipal,
+      show: isHod,
     },
   ];
 

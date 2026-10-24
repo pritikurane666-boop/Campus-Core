@@ -30,6 +30,31 @@ public class DatabaseSeeder
 
     public async Task SeedAsync()
     {
+        // 0. Ensure existing "Principal" role is renamed to "HOD" to preserve user role bindings
+        var existingPrincipalRole = await _db.Roles.FirstOrDefaultAsync(r => r.Name == "Principal");
+        if (existingPrincipalRole != null)
+        {
+            var existingHodRole = await _db.Roles.FirstOrDefaultAsync(r => r.Name == "HOD");
+            if (existingHodRole == null)
+            {
+                existingPrincipalRole.Name = "HOD";
+                existingPrincipalRole.Description = "HOD role with specific operational permissions.";
+                await _db.SaveChangesAsync();
+            }
+        }
+
+        if (_db.Database.IsRelational())
+        {
+            try
+            {
+                await _db.Database.ExecuteSqlRawAsync("ALTER TABLE admissions ADD COLUMN IF NOT EXISTS blood_group text NULL;");
+            }
+            catch
+            {
+                // Ignore if not supported on the provider
+            }
+        }
+
         // 1. Roles - Ensure canonical RBAC Roles exist
         var roleNames = Enum.GetNames<UserRoleType>();
         foreach (var roleName in roleNames)
@@ -46,13 +71,13 @@ public class DatabaseSeeder
         await _db.SaveChangesAsync();
 
         var roles = await _db.Roles.ToDictionaryAsync(r => r.Name);
-        var principalRoleId = roles[UserRoleType.Principal.ToString()].Id;
+        var hodRoleId = roles[UserRoleType.HOD.ToString()].Id;
 
-        // 2. Administrator Account Bootstrap (only if no Principal exists)
-        var anyPrincipalExists = await _db.UserRoles
-            .AnyAsync(ur => ur.RoleId == principalRoleId && !ur.User.IsDeleted);
+        // 2. Administrator Account Bootstrap (only if no HOD exists)
+        var anyHodExists = await _db.UserRoles
+            .AnyAsync(ur => ur.RoleId == hodRoleId && !ur.User.IsDeleted);
 
-        if (!anyPrincipalExists)
+        if (!anyHodExists)
         {
             var adminEmail = _adminOptions.Email.Trim();
             var adminPassword = _adminOptions.Password?.Trim();
@@ -80,21 +105,21 @@ public class DatabaseSeeder
                         IsActive = true,
                         IsDeleted = false
                     };
-                    adminUser.UserRoles.Add(new UserRole { RoleId = principalRoleId });
+                    adminUser.UserRoles.Add(new UserRole { RoleId = hodRoleId });
                     _db.Users.Add(adminUser);
                     await _db.SaveChangesAsync();
-                    _logger.LogInformation("Initial Principal administrator account created: {Email}", adminEmail);
+                    _logger.LogInformation("Initial HOD administrator account created: {Email}", adminEmail);
                 }
                 else
                 {
-                    // User exists by email, attach Principal role if missing without overwriting password
+                    // User exists by email, attach HOD role if missing without overwriting password
                     existingUserByEmail.IsDeleted = false;
                     existingUserByEmail.IsActive = true;
-                    if (!existingUserByEmail.UserRoles.Any(ur => ur.RoleId == principalRoleId))
+                    if (!existingUserByEmail.UserRoles.Any(ur => ur.RoleId == hodRoleId))
                     {
-                        existingUserByEmail.UserRoles.Add(new UserRole { RoleId = principalRoleId, UserId = existingUserByEmail.Id });
+                        existingUserByEmail.UserRoles.Add(new UserRole { RoleId = hodRoleId, UserId = existingUserByEmail.Id });
                         await _db.SaveChangesAsync();
-                        _logger.LogInformation("Assigned Principal role to existing user: {Email}", adminEmail);
+                        _logger.LogInformation("Assigned HOD role to existing user: {Email}", adminEmail);
                     }
                 }
             }

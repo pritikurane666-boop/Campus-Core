@@ -35,7 +35,7 @@ public class ExamsController : ControllerBase
             .Include(e => e.ExamSubjects).ThenInclude(es => es.Subject)
             .AsNoTracking();
 
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        var isAdmin = _currentUserService.IsInRole("HOD");
         Teacher? currentTeacher = null;
 
         if (_currentUserService.IsInRole("Student"))
@@ -135,7 +135,7 @@ public class ExamsController : ControllerBase
 
         if (e == null) return NotFound();
 
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        var isAdmin = _currentUserService.IsInRole("HOD");
         Teacher? currentTeacher = null;
 
         if (!isAdmin && _currentUserService.IsInRole("Teacher"))
@@ -209,7 +209,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<ExamDto>> Create([FromBody] CreateExamRequest request)
     {
         var classroom = await _db.Classes.FindAsync(request.ClassRoomId);
@@ -324,7 +324,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<ExamDto>> Update(Guid id, [FromBody] CreateExamRequest request)
     {
         var exam = await _db.Exams
@@ -378,7 +378,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var exam = await _db.Exams
@@ -414,7 +414,7 @@ public class ExamsController : ControllerBase
             return StatusCode(403, new { message = "Students are not permitted to view class-wide marks entry rosters." });
         }
 
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        var isAdmin = _currentUserService.IsInRole("HOD");
         if (!isAdmin && _currentUserService.IsInRole("Teacher"))
         {
             var teacher = await _db.Teachers
@@ -486,8 +486,8 @@ public class ExamsController : ControllerBase
             return BadRequest(new { message = "Marks entry is locked for this exam." });
         }
 
-        // ROLE RESTRICTION: Principal CANNOT enter marks. Only Teachers can enter marks!
-        if (_currentUserService.IsInRole("Principal"))
+        // ROLE RESTRICTION: HOD CANNOT enter marks. Only Teachers can enter marks!
+        if (_currentUserService.IsInRole("HOD"))
         {
             return StatusCode(403, new { message = "Administrators are not permitted to enter or modify marks. Score entry is strictly reserved for faculty teachers." });
         }
@@ -558,7 +558,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPost("{id}/publish")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> PublishExam(Guid id)
     {
         var exam = await _db.Exams.FindAsync(id);
@@ -838,7 +838,7 @@ public class ResultsController : ControllerBase
     }
 
     [HttpGet("exam/{examId}/class-report")]
-    [Authorize(Roles = "Principal,Teacher")]
+    [Authorize(Roles = "HOD,Teacher")]
     public async Task<ActionResult<ClassExamReportDto>> GetClassExamReport(Guid examId)
     {
         var exam = await _db.Exams
@@ -849,7 +849,7 @@ public class ResultsController : ControllerBase
 
         if (exam == null) return NotFound("Examination not found.");
 
-        var isAdmin = _currentUserService.IsInRole("Principal");
+        var isAdmin = _currentUserService.IsInRole("HOD");
         if (!isAdmin && _currentUserService.IsInRole("Teacher"))
         {
             var teacher = await _db.Teachers
@@ -1048,7 +1048,7 @@ public class ResultsController : ControllerBase
     }
 
     [HttpGet("exam/{examId}/export-csv")]
-    [Authorize(Roles = "Principal,Teacher")]
+    [Authorize(Roles = "HOD,Teacher")]
     public async Task<IActionResult> ExportClassExamCsv(Guid examId)
     {
         var reportRes = await GetClassExamReport(examId);

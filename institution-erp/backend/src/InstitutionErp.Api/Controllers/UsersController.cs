@@ -13,7 +13,7 @@ namespace InstitutionErp.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
-[Authorize(Roles = "Principal")]
+[Authorize(Roles = "HOD")]
 public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -43,6 +43,7 @@ public class UsersController : ControllerBase
         var query = _db.Users
             .Include(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
+            .Where(u => !u.UserRoles.Any(ur => ur.Role.Name.ToLower() == "student"))
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -84,6 +85,12 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserRequest request)
     {
+        if (request.Roles == null || request.Roles.Count == 0 ||
+            request.Roles.Any(r => !r.Equals("HOD", StringComparison.OrdinalIgnoreCase) && !r.Equals("Teacher", StringComparison.OrdinalIgnoreCase)))
+        {
+            return BadRequest(new { message = "Only HOD and Teacher roles can be assigned." });
+        }
+
         if (await _db.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
         {
             return BadRequest(new { message = "Email already in use." });
@@ -234,6 +241,17 @@ public class UsersController : ControllerBase
             .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return NotFound();
+
+        if (user.UserRoles.Any(ur => ur.Role.Name.Equals("Student", StringComparison.OrdinalIgnoreCase)))
+        {
+            return BadRequest(new { message = "Cannot modify roles of a student user." });
+        }
+
+        if (request.Roles == null || request.Roles.Count == 0 ||
+            request.Roles.Any(r => !r.Equals("HOD", StringComparison.OrdinalIgnoreCase) && !r.Equals("Teacher", StringComparison.OrdinalIgnoreCase)))
+        {
+            return BadRequest(new { message = "Only HOD and Teacher roles can be assigned." });
+        }
 
         var oldRoles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
 

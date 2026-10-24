@@ -13,6 +13,7 @@ public class Admission : BaseEntity
     public string PhoneNumber { get; set; } = string.Empty;
     public DateTime DateOfBirth { get; set; }
     public Gender Gender { get; set; }
+    public string? BloodGroup { get; set; }
     public string Address { get; set; } = string.Empty;
 
     public string GuardianName { get; set; } = string.Empty;

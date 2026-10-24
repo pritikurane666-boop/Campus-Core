@@ -44,7 +44,7 @@ const RoleDashboardDispatcher: React.FC = () => {
     return <AdminDashboardPage />;
   }
 
-  if (user.roles.includes('Principal')) {
+  if (user.roles.includes('HOD')) {
     return <AdminDashboardPage />;
   }
   if (user.roles.includes('Teacher')) {
@@ -57,25 +57,25 @@ const RoleDashboardDispatcher: React.FC = () => {
   return <AdminDashboardPage />;
 };
 
-// Principal Only Guard (Principal: Admin Governance, Fees, Teachers, Admissions, Student Directory)
-const PrincipalOnly: React.FC<{ children: React.ReactNode; fallback?: string }> = ({
+// HOD Only Guard (HOD: Admin Governance, Fees, Teachers, Admissions, Student Directory)
+const HodOnly: React.FC<{ children: React.ReactNode; fallback?: string }> = ({
   children,
   fallback = '/dashboard',
 }) => {
   const { hasRole } = useAuth();
-  if (!hasRole('Principal')) {
+  if (!hasRole('HOD')) {
     return <Navigate to={fallback} replace />;
   }
   return <>{children}</>;
 };
 
-// Staff Only Guard (Principal or Teacher: Classroom management, Attendance, Student Portal, Marks Entry)
+// Staff Only Guard (HOD or Teacher: Classroom management, Attendance, Student Portal, Marks Entry)
 const StaffOnly: React.FC<{ children: React.ReactNode; fallback?: string }> = ({
   children,
   fallback = '/dashboard',
 }) => {
   const { hasRole } = useAuth();
-  if (!hasRole(['Principal', 'Teacher'])) {
+  if (!hasRole(['HOD', 'Teacher'])) {
     return <Navigate to={fallback} replace />;
   }
   return <>{children}</>;
@@ -104,18 +104,18 @@ export const AppRoutes: React.FC = () => {
         <Route path="/dashboard" element={<RoleDashboardDispatcher />} />
         <Route path="/portal" element={<ParentDashboardPage />} />
 
-        {/* Principal-Only Governance Modules */}
-        <Route path="/admissions" element={<PrincipalOnly><AdmissionsQueuePage /></PrincipalOnly>} />
-        <Route path="/students" element={<PrincipalOnly><StudentsListPage /></PrincipalOnly>} />
-        <Route path="/teachers" element={<PrincipalOnly><TeachersListPage /></PrincipalOnly>} />
-        <Route path="/fees" element={<PrincipalOnly><FeeManagementPage /></PrincipalOnly>} />
-        <Route path="/fees/defaulters" element={<PrincipalOnly><FeeDefaultersPage /></PrincipalOnly>} />
-        <Route path="/admin/users" element={<PrincipalOnly><UsersPage /></PrincipalOnly>} />
-        <Route path="/admin/audit-logs" element={<PrincipalOnly><AuditLogsPage /></PrincipalOnly>} />
-        <Route path="/admin/supabase" element={<PrincipalOnly><SupabaseManagementPage /></PrincipalOnly>} />
-        <Route path="/supabase" element={<PrincipalOnly><SupabaseManagementPage /></PrincipalOnly>} />
+        {/* HOD-Only Governance Modules */}
+        <Route path="/admissions" element={<HodOnly><AdmissionsQueuePage /></HodOnly>} />
+        <Route path="/students" element={<HodOnly><StudentsListPage /></HodOnly>} />
+        <Route path="/teachers" element={<HodOnly><TeachersListPage /></HodOnly>} />
+        <Route path="/fees" element={<HodOnly><FeeManagementPage /></HodOnly>} />
+        <Route path="/fees/defaulters" element={<HodOnly><FeeDefaultersPage /></HodOnly>} />
+        <Route path="/admin/users" element={<HodOnly><UsersPage /></HodOnly>} />
+        <Route path="/admin/audit-logs" element={<HodOnly><AuditLogsPage /></HodOnly>} />
+        <Route path="/admin/supabase" element={<HodOnly><SupabaseManagementPage /></HodOnly>} />
+        <Route path="/supabase" element={<HodOnly><SupabaseManagementPage /></HodOnly>} />
 
-        {/* Staff Operations (Principal & Teachers) */}
+        {/* Staff Operations (HOD & Teachers) */}
         <Route path="/classes" element={<StaffOnly><ClassesPage /></StaffOnly>} />
         <Route path="/attendance" element={<StaffOnly><MarkAttendancePage /></StaffOnly>} />
         <Route path="/attendance/mark" element={<StaffOnly><MarkAttendancePage /></StaffOnly>} />

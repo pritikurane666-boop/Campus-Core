@@ -220,14 +220,15 @@ builder.Services.AddAuthentication(options =>
 // 6. Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("RequirePrincipal", policy => policy.RequireRole("Principal"));
-    options.AddPolicy("RequireTeacher", policy => policy.RequireRole("Principal", "Teacher"));
-    options.AddPolicy("RequireStudent", policy => policy.RequireRole("Principal", "Student"));
+    options.AddPolicy("RequireHod", policy => policy.RequireRole("HOD"));
+    options.AddPolicy("RequireTeacher", policy => policy.RequireRole("HOD", "Teacher"));
+    options.AddPolicy("RequireStudent", policy => policy.RequireRole("HOD", "Student"));
     // Backward compatibility aliases
-    options.AddPolicy("RequireSuperAdmin", policy => policy.RequireRole("Principal"));
-    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Principal"));
-    options.AddPolicy("RequireAccountant", policy => policy.RequireRole("Principal"));
-    options.AddPolicy("RequireParentOrStudent", policy => policy.RequireRole("Principal", "Student"));
+    options.AddPolicy("RequirePrincipal", policy => policy.RequireRole("HOD"));
+    options.AddPolicy("RequireSuperAdmin", policy => policy.RequireRole("HOD"));
+    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("HOD"));
+    options.AddPolicy("RequireAccountant", policy => policy.RequireRole("HOD"));
+    options.AddPolicy("RequireParentOrStudent", policy => policy.RequireRole("HOD", "Student"));
 });
 
 // 7. CORS

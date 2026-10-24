@@ -28,7 +28,7 @@ import {
 export const ResultsViewPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
-  const isAdmin = hasRole('Principal');
+  const isAdmin = hasRole('HOD');
   const [searchParams, setSearchParams] = useSearchParams();
   const initialExamId = searchParams.get('examId') || '';
 

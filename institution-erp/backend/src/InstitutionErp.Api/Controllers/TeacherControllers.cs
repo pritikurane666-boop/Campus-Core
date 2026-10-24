@@ -41,7 +41,7 @@ public class TeachersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<TeacherDto>>> GetTeachers()
     {
-        var isAdmin = User.IsInRole("Principal");
+        var isAdmin = User.IsInRole("HOD");
         var teachers = await _db.Teachers
             .Include(t => t.User)
             .Include(t => t.Allocations)
@@ -103,7 +103,7 @@ public class TeachersController : ControllerBase
 
         if (t == null) return NotFound();
 
-        var isAdmin = User.IsInRole("Principal");
+        var isAdmin = User.IsInRole("HOD");
 
         return Ok(new TeacherDto
         {
@@ -139,7 +139,7 @@ public class TeachersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<TeacherDto>> Create([FromBody] CreateTeacherRequest request)
     {
         if (await _db.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
@@ -271,7 +271,7 @@ public class TeachersController : ControllerBase
     }
 
     [HttpPost("{id}/reset-password")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> ResetPassword(Guid id, [FromBody] ResetTeacherPasswordRequest? request = null)
     {
         var teacher = await _db.Teachers
@@ -356,7 +356,7 @@ public class TeachersController : ControllerBase
 
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<TeacherDto>> Update(Guid id, [FromBody] UpdateTeacherRequest request)
     {
         var teacher = await _db.Teachers
@@ -406,7 +406,7 @@ public class TeachersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> DeleteTeacher(Guid id)
     {
         var teacher = await _db.Teachers
@@ -443,7 +443,7 @@ public class TeachersController : ControllerBase
     }
 
     [HttpPost("{id}/allocations")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> AllocateTeacher(Guid id, [FromBody] AllocateTeacherRequest request)
     {
         // Conflict check: no double allocation of the same subject in the same class to another teacher
@@ -483,7 +483,7 @@ public class TeachersController : ControllerBase
 
     [HttpDelete("allocations/{allocationId}")]
     [HttpDelete("{id}/allocations/{allocationId}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> DeallocateTeacher([FromRoute] Guid allocationId, [FromRoute] Guid? id = null)
     {
         var query = _db.TeacherAllocations
@@ -652,7 +652,7 @@ public class TimetableController : ControllerBase
     }
 
     [HttpPost("academic-year/{academicYearId}/fix")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> FixYearTimetable(Guid academicYearId)
     {
         var year = await _db.AcademicYears.FindAsync(academicYearId);
@@ -684,7 +684,7 @@ public class TimetableController : ControllerBase
     }
 
     [HttpPost("academic-year/{academicYearId}/unfix")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> UnfixYearTimetable(Guid academicYearId)
     {
         var year = await _db.AcademicYears.FindAsync(academicYearId);
@@ -704,7 +704,7 @@ public class TimetableController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal,Teacher")]
+    [Authorize(Roles = "HOD,Teacher")]
     public async Task<ActionResult<TimetableEntryDto>> Create([FromBody] CreateTimetableEntryRequest request)
     {
         var classroom = await _db.Classes
@@ -713,7 +713,7 @@ public class TimetableController : ControllerBase
 
         if (classroom == null) return NotFound(new { message = "Classroom not found." });
 
-        var isAdmin = User.IsInRole("Principal");
+        var isAdmin = User.IsInRole("HOD");
         if (!isAdmin && User.IsInRole("Teacher"))
         {
             var teacher = await _db.Teachers.FirstOrDefaultAsync(t => t.UserId == _currentUserService.UserId);
@@ -742,18 +742,6 @@ public class TimetableController : ControllerBase
             return BadRequest(new { message = "Selected subject is not allocated to this classroom." });
         }
 
-        // Clash detection 1: Class double-booked for the same day and period
-        if (await _db.TimetableEntries.AnyAsync(t => t.ClassRoomId == request.ClassRoomId && t.DayOfWeek == request.DayOfWeek && t.PeriodNumber == request.PeriodNumber))
-        {
-            return BadRequest(new { message = $"Class already has a period assigned at Day {request.DayOfWeek}, Period #{request.PeriodNumber}." });
-        }
-
-        // Clash detection 2: Teacher double-booked for the same day and period
-        if (await _db.TimetableEntries.AnyAsync(t => t.TeacherId == request.TeacherId && t.DayOfWeek == request.DayOfWeek && t.PeriodNumber == request.PeriodNumber))
-        {
-            return BadRequest(new { message = $"Teacher is already assigned to another class at Day {request.DayOfWeek}, Period #{request.PeriodNumber}." });
-        }
-
         TimeSpan.TryParse(request.StartTime, out var start);
         TimeSpan.TryParse(request.EndTime, out var end);
 
@@ -780,6 +768,31 @@ public class TimetableController : ControllerBase
         {
             start = standardTimes.Start;
             end = standardTimes.End;
+        }
+
+        // Clash detection 1: Class already scheduled for this period or overlapping time on that day
+        var classClash = await _db.TimetableEntries
+            .Include(t => t.Subject)
+            .FirstOrDefaultAsync(t => t.ClassRoomId == request.ClassRoomId 
+                && t.DayOfWeek == request.DayOfWeek 
+                && (t.PeriodNumber == request.PeriodNumber || (start < t.EndTime && end > t.StartTime)));
+
+        if (classClash != null)
+        {
+            return BadRequest(new { message = $"This class already has a scheduled subject ({classClash.Subject?.Name ?? "Subject"}) in period {classClash.PeriodNumber} at that time." });
+        }
+
+        // Clash detection 2: Teacher already scheduled for another class in the same period or overlapping time
+        var teacherClash = await _db.TimetableEntries
+            .Include(t => t.ClassRoom)
+            .FirstOrDefaultAsync(t => t.TeacherId == request.TeacherId 
+                && t.DayOfWeek == request.DayOfWeek 
+                && (t.PeriodNumber == request.PeriodNumber || (start < t.EndTime && end > t.StartTime)));
+
+        if (teacherClash != null)
+        {
+            var clashingClassName = teacherClash.ClassRoom?.FullName ?? "another class";
+            return BadRequest(new { message = $"This teacher is already teaching {clashingClassName} in period {teacherClash.PeriodNumber} at that time." });
         }
 
         var entry = new TimetableEntry
@@ -814,7 +827,7 @@ public class TimetableController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal,Teacher")]
+    [Authorize(Roles = "HOD,Teacher")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var entry = await _db.TimetableEntries
@@ -823,7 +836,7 @@ public class TimetableController : ControllerBase
 
         if (entry == null) return NotFound();
 
-        var isAdmin = User.IsInRole("Principal");
+        var isAdmin = User.IsInRole("HOD");
         if (!isAdmin && User.IsInRole("Teacher"))
         {
             var teacher = await _db.Teachers.FirstOrDefaultAsync(t => t.UserId == _currentUserService.UserId);
@@ -891,7 +904,7 @@ public class TeacherAttendanceController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> Mark([FromBody] MarkTeacherAttendanceRequest request)
     {
         var targetDate = DateTime.SpecifyKind(request.Date.Date, DateTimeKind.Utc);

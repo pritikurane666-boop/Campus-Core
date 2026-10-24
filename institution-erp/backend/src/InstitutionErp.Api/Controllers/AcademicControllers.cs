@@ -43,7 +43,7 @@ public class AcademicYearsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<AcademicYearDto>> Create([FromBody] CreateAcademicYearRequest request)
     {
         if (request.IsActive)
@@ -76,7 +76,7 @@ public class AcademicYearsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<AcademicYearDto>> Update(Guid id, [FromBody] UpdateAcademicYearRequest request)
     {
         var y = await _db.AcademicYears.FirstOrDefaultAsync(y => y.Id == id);
@@ -107,7 +107,7 @@ public class AcademicYearsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var y = await _db.AcademicYears
@@ -160,7 +160,7 @@ public class ClassesController : ControllerBase
             .ThenBy(c => c.Section)
             .ToListAsync();
 
-        var isAdmin = User.IsInRole("Principal");
+        var isAdmin = User.IsInRole("HOD");
         if (!isAdmin && User.IsInRole("Teacher"))
         {
             var teacher = await _db.Teachers
@@ -247,7 +247,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<ClassRoomDto>> Create([FromBody] CreateClassRoomRequest request)
     {
         var cr = new ClassRoom
@@ -277,7 +277,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<ClassRoomDto>> Update(Guid id, [FromBody] UpdateClassRoomRequest request)
     {
         var cr = await _db.Classes
@@ -308,7 +308,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var cr = await _db.Classes
@@ -394,7 +394,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpPost("{id}/class-teacher")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> AssignClassTeacher(Guid id, [FromBody] AssignClassTeacherRequest request)
     {
         var cr = await _db.Classes
@@ -476,7 +476,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpDelete("{id}/class-teacher")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> RemoveClassTeacher(Guid id)
     {
         var classTeachers = await _db.TeacherAllocations
@@ -500,7 +500,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpPost("{id}/subjects")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> AssignSubject(Guid id, [FromBody] AssignSubjectToClassRequest request)
     {
         var cr = await _db.Classes.FindAsync(id);
@@ -563,7 +563,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpPost("{id}/subjects/{subjectId}/teacher")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> AssignSubjectTeacher(Guid id, Guid subjectId, [FromBody] AssignClassSubjectTeacherRequest request)
     {
         var cr = await _db.Classes.FindAsync(id);
@@ -620,7 +620,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpDelete("{id}/subjects/{subjectId}/teacher")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> RemoveSubjectTeacher(Guid id, Guid subjectId)
     {
         var alloc = await _db.TeacherAllocations
@@ -636,7 +636,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpDelete("{id}/subjects/{subjectId}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> RemoveSubjectFromClass(Guid id, Guid subjectId)
     {
         var classSubject = await _db.ClassSubjects
@@ -732,7 +732,7 @@ public class SubjectsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<SubjectDto>> Create([FromBody] CreateSubjectRequest request)
     {
         if (await _db.Subjects.AnyAsync(s => s.Code.ToLower() == request.Code.ToLower()))
@@ -840,7 +840,7 @@ public class SubjectsController : ControllerBase
     }
 
     [HttpPost("{id}/teachers")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> AssociateTeacherToSubject(Guid id, [FromBody] AssociateSubjectTeacherRequest request)
     {
         var subject = await _db.Subjects.FindAsync(id);
@@ -867,7 +867,7 @@ public class SubjectsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<ActionResult<SubjectDto>> Update(Guid id, [FromBody] UpdateSubjectRequest request)
     {
         var s = await _db.Subjects.FirstOrDefaultAsync(s => s.Id == id);
@@ -895,7 +895,7 @@ public class SubjectsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Principal")]
+    [Authorize(Roles = "HOD")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var s = await _db.Subjects
